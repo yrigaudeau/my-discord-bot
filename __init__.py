@@ -1,12 +1,16 @@
+from dotenv import load_dotenv
+from os import getenv
 from discord.ext import commands
 
 from music import Music
 from fun import Fun
 from manage import Manage
 
+load_dotenv()
+
 description = 'Relatively simple music bot example'
 PREFIX = '$'
-TOKEN = 'ODgwMDY2MzUxNDcxOTM1NTcw.YSY3qQ.uKPOjXSJ-oJh7_XOEdRVi_a2B7Y'
+TOKEN = getenv("TOKEN")
 
 if __name__ == "__main__":
     bot = commands.Bot(command_prefix=commands.when_mentioned_or(PREFIX), description=description)
