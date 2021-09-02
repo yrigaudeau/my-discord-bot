@@ -8,7 +8,7 @@ from manage import Manage
 
 load_dotenv()
 
-description = 'Relatively simple music bot example'
+description = 'Alors, on attend pas Patrick ???'
 PREFIX = '$'
 TOKEN = getenv("TOKEN")
 

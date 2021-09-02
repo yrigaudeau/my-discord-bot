@@ -1,7 +1,6 @@
 import asyncio
-from discord.ext import commands, tasks
+from discord.ext import commands
 from youtube import Youtube, YTDLSource
-from multiprocessing import Process
 import time
 
 Queues = {}
@@ -37,37 +36,22 @@ class Queue():
         self.size = 0
         self.cursor = 0
         self.starttime = 0
-        self.pausedtime = 0
-        self.previoustime = 0
         self.voice_client = voice_client
         self.text_channel = text_channel
         self.bot = bot
-        self.lock = asyncio.Lock()
-
-    async def progressCount(self):
-        if self.voice_client.is_paused:
-            self.pausedtime = self.pausedtime + time.time() - self.previoustime
-        self.previoustime = time.time()
-
-    @tasks.loop(seconds=0.1)
-    async def progressLoop(self):
-        async with self.lock:
-            await self.progressCount()
 
     async def startPlayback(self):
         player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop, stream=True)
         self.voice_client.play(player, after=lambda e: self.nextSong())
         self.starttime = time.time()
-        self.previoustime = self.starttime
-        # self.progressLoop.start()
 
         await self.text_channel.send('En lecture : {}'.format(self.content[self.cursor].title))
 
     async def addEntry(self, song):
         self.content.append(song)
         self.size = self.size + 1
-        if self.size == self.cursor + 1:
-            await self.startPlayback()
+        #if self.size == self.cursor + 1:
+        #    await self.startPlayback()
         return 0
 
     def nextSong(self):
@@ -84,7 +68,7 @@ class Queue():
                 pass
 
     def removeEntry(self, index):
-        if index > 0 and index < self.size:
+        if index >= 0 and index < self.size:
             self.content.pop(index)
             self.size = self.size - 1
             return 0
@@ -109,7 +93,7 @@ class Queue():
         return self.content.index(song)
 
     def getSong(self, index):
-        if index > 0 and index < self.size:
+        if index >= 0 and index < self.size:
             return self.content[index]
         else:
             return None
@@ -126,14 +110,14 @@ class Music(commands.Cog):
         if query is None:
             return await context.send('Aucune musique n\'est précisé')
 
-        voiceChannel = context.author.voice.channel
+        authorVoice = context.author.voice
         voiceClient = context.voice_client
-        if voiceChannel is None:
+        if authorVoice is None:
             return await context.send('Non connecté à un salon vocal')
         elif voiceClient is not None:
-            await voiceClient.move_to(voiceChannel)
+            await voiceClient.move_to(authorVoice.channel)
         else:
-            await voiceChannel.connect()
+            await authorVoice.channel.connect()
 
         guild = context.guild
         if guild not in Queues:
@@ -145,7 +129,10 @@ class Music(commands.Cog):
             pass
         else:
             # search for the string
-            result = await Youtube.searchVideos(self, query)
+            try:
+                result = await Youtube.searchVideos(self, query)
+            except:
+                return await context.send('Aucune musique trouvé')
             print(result)
             applicant = context.author
             title = result["title"]
@@ -176,13 +163,14 @@ class Music(commands.Cog):
         if guild not in Queues:
             return await context.send('Rien en lecture')
 
+        title = Queues[guild].content[Queues[guild].cursor].title
         current = time_format(
-            int(time.time() - Queues[guild].starttime - Queues[guild].pausedtime))
+            int(time.time() - Queues[guild].starttime))
         duration = time_format(
             Queues[guild].content[Queues[guild].cursor].duration)
         thumbnail = Queues[guild].content[Queues[guild].cursor].thumbnail
 
-        await context.send('En lecture : %s\nProgression : %s / %s\n%s' % (Queues[guild].content[Queues[guild].cursor].title, current, duration, thumbnail))
+        await context.send('En lecture : %s\nProgression : %s / %s\n%s' % (title, current, duration, thumbnail))
 
     @commands.command(aliases=['q', 'file'])
     async def queue(self, context):
@@ -201,10 +189,10 @@ class Music(commands.Cog):
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
-        s = Queues[guild].getSong(frm)
+        t = Queues[guild].getSong(frm).title
         r = Queues[guild].moveEntry(frm, to)
         if r == 0:
-            return await context.send('%s a été déplacé de %d vers %d' % (s.title, frm, to))
+            return await context.send('%s a été déplacé de %d vers %d' % (t, frm, to))
         else:
             return await context.send('Erreur lors du déplacement de la chanson')
 
@@ -213,10 +201,10 @@ class Music(commands.Cog):
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
-        s = Queues[guild].getSong(index)
+        t = Queues[guild].getSong(index).title
         r = Queues[guild].removeEntry(index)
         if r == 0:
-            return await context.send('%s a bien été supprimé' % (s.title))
+            return await context.send('%s a bien été supprimé' % (t))
         else:
             return await context.send('Erreur lors de la suppression de la chanson')
 
