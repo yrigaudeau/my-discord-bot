@@ -45,13 +45,14 @@ class Queue():
         self.voice_client.play(player, after=lambda e: self.nextSong())
         self.starttime = time.time()
 
-        await self.text_channel.send('En lecture : {}'.format(self.content[self.cursor].title))
+        await self.text_channel.send('En lecture : %s' % (self.content[self.cursor].title))
 
     async def addEntry(self, song):
         self.content.append(song)
         self.size = self.size + 1
-        #if self.size == self.cursor + 1:
-        #    await self.startPlayback()
+        await self.text_channel.send("%s a été ajouté à la file d\'attente" % (song.title))
+        if self.size == self.cursor + 1:
+            await self.startPlayback()
         return 0
 
     def nextSong(self):
@@ -81,10 +82,7 @@ class Queue():
             # sinon ok
             song = self.content[frm]
             self.content.pop(frm)
-            if frm < to:
-                self.content.insert(to, song)
-            else:
-                self.content.insert(to, song)
+            self.content.insert(to, song)
             return 0
         else:
             return None
@@ -234,7 +232,7 @@ class Music(commands.Cog):
         else:
             return await context.send('Aucune lecture en cours')
 
-    @commands.command(aliases=['arreter'])
+    @commands.command(aliases=['arreter', 'stopper', 'quitter', 'leave'])
     async def stop(self, context):
         voiceClient = context.voice_client
         guild = context.guild
