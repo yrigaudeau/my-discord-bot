@@ -41,7 +41,7 @@ class Queue():
         self.bot = bot
 
     async def startPlayback(self):
-        player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop, stream=True)
+        player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
         self.voice_client.play(player, after=lambda e: self.nextSong())
         self.starttime = time.time()
 
