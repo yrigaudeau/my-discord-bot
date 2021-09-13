@@ -1,6 +1,8 @@
 import asyncio
+import os
+import discord
 from discord.ext import commands
-from youtube import Youtube, YTDLSource
+from youtube import Youtube
 import time
 
 Queues = {}
@@ -20,28 +22,31 @@ def time_format(seconds):
 
 
 class Song():
-    def __init__(self, applicant, title, artist, duration, url, source, thumbnail=None):
-        self.title = title
-        self.artist = artist
-        self.url = url
-        self.thumbnail = thumbnail
-        self.source = source
+    def __init__(self, applicant, filename):
+        self.filename = filename
         self.applicant = applicant
-        self.duration = duration
+
+    def buildMetadata(self, data):
+        self.title = data['track'] if 'track' in data else data['title']
+        self.album = data['album'] if 'album' in data else None
+        self.artist = data['artist'] if 'artist' in data else data['channel']
+        self.duration = data['duration']
+        self.thumbnail = data['thumbnail']
+        self.url = 'https://youtu.be/' + data['id']
 
 
 class Queue():
-    def __init__(self, bot, voice_client, text_channel):
+    def __init__(self, voice_client, text_channel):
         self.content = []
         self.size = 0
         self.cursor = 0
         self.starttime = 0
         self.voice_client = voice_client
         self.text_channel = text_channel
-        self.bot = bot
 
     async def startPlayback(self):
-        player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
+        #player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
+        player = discord.FFmpegPCMAudio(self.content[self.cursor].filename, options="-vn")
         self.voice_client.play(player, after=lambda e: self.nextSong())
         self.starttime = time.time()
 
@@ -59,7 +64,6 @@ class Queue():
         self.cursor = self.cursor + 1
         print("hey")
         if self.cursor < self.size:
-            self.progressLoop.stop()
             coro = self.startPlayback()
             fut = asyncio.run_coroutine_threadsafe(
                 coro, self.voice_client.loop)
@@ -119,40 +123,34 @@ class Music(commands.Cog):
 
         guild = context.guild
         if guild not in Queues:
-            Queues[guild] = Queue(
-                self.bot, context.voice_client, context.channel)
+            Queues[guild] = Queue(context.voice_client, context.channel)
         queue = Queues[guild]
 
         if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
+            # Other streams
             pass
         else:
-            # search for the string
+            # YouTube
+            url = query
+            if not query.startswith("https://"):
+                try:
+                    result = await Youtube.searchVideos(query)
+                except:
+                    return await context.send('Aucune musique trouvé')
+                url = result["link"]
+                print(url)
+
             try:
-                result = await Youtube.searchVideos(self, query)
+                data, filename = await Youtube.downloadSong(url)
             except:
-                return await context.send('Aucune musique trouvé')
-            print(result)
+                return await context.send('Le lien n\'est pas valide')
+            
             applicant = context.author
-            title = result["title"]
-            artist = result["channel"]["name"]
-            try:
-                duration = result["duration"].split(":")
-                duration.reverse()
-                duration_sec = 0
-                for i in range(len(duration)):
-                    duration_sec = duration_sec + int(duration[i])*(60**i)
-            except:
-                duration_sec = 0
-            thumbnail = result["thumbnails"][len(
-                result["thumbnails"])-1]["url"]
-            url = result["link"]
+            song = Song(applicant, filename)
+            song.buildMetadata(data)
 
-            print(applicant)
-            print(queue.size)
-
-            song = Song(applicant, title, artist, duration_sec,
-                        url, "YouTube", thumbnail)
             await queue.addEntry(song)
+
         return 0
 
     @commands.command(aliases=['np', 'en lecture'])
@@ -194,7 +192,7 @@ class Music(commands.Cog):
         else:
             return await context.send('Erreur lors du déplacement de la chanson')
 
-    @commands.command(aliases=['rm', 'supprimer'])
+    @commands.command(aliases=['rm', 'supprimer', 'enlever'])
     async def remove(self, context, index: int):
         guild = context.guild
         if guild not in Queues:

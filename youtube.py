@@ -52,7 +52,19 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Youtube():
-    async def searchVideos(self, query):
+    async def searchVideos(query):
         videosSearch = VideosSearch(query, limit=1)
         videosResult = await videosSearch.next()
         return videosResult["result"][0]
+    
+    async def downloadSong(url):
+        data = ytdl.extract_info(url, download=False)
+        if data['is_live'] == True:
+            filename = data['url']
+        else:
+            data = ytdl.extract_info(url, download=True)
+            filename = ytdl.prepare_filename(data)
+        print(filename)
+        return data, filename
+
+#asyncio.run(Youtube.downloadSong('https://www.youtube.com/watch?v=3r9vJI5OiV8'))

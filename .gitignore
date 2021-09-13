@@ -1,0 +1,6 @@
+examples
+__pycache__
+.*
+*.env
+*.webm
+!.gitignore
