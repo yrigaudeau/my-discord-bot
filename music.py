@@ -23,8 +23,8 @@ def time_format(seconds):
 
 class Entry():
     def __init__(self, applicant, filename, entryType):
-        self.filename = filename
         self.applicant = applicant
+        self.filename = filename
         self.entryType = entryType
 
     def buildMetadataYoutube(self, data):
@@ -265,6 +265,9 @@ class Music(commands.Cog):
         voiceClient = context.voice_client
         guild = context.guild
         if voiceClient is not None:
+            for song in Queues[guild].content:
+                if song.entryType != "live":
+                    os.remove(song.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()
