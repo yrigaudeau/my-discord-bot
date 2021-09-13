@@ -1,6 +1,6 @@
+!.gitignore
 examples
 __pycache__
 .*
-*.env
 *.webm
-!.gitignore
+*.m4a
