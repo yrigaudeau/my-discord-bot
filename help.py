@@ -47,7 +47,7 @@ class Help(commands.Cog):
     async def help(self, context):
         embed = discord.Embed(
             title='La page d\'aide wallah',
-            description='ui',
+            description='tavu',
             color=0x565493
         )
         embed.set_author(name="Aide", icon_url="https://i.imgur.com/C66eNWB.jpg")
