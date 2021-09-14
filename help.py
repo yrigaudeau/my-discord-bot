@@ -1,8 +1,9 @@
+import os
 import discord
 from discord.ext import commands
 
 import json
-with open("config.json") as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json") as f:
     config = json.load(f)
     f.close()
 

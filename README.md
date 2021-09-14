@@ -32,8 +32,7 @@ python3 .
 ### Install as service
 ```bash
 cp my-discord-bot.service /etc/systemd/system
-cd ..
-cp -r my-discord-bot /opt
+cp -r ../my-discord-bot /opt
 systemctl enable my-discord-bot
 systemctl start my-discord-bot
 ```
