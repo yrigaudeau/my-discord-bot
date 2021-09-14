@@ -3,6 +3,7 @@ import os
 import discord
 from discord.ext import commands
 from youtube import Youtube
+from help import Help
 import time
 
 Queues = {}
@@ -60,7 +61,6 @@ class Queue():
         await self.text_channel.send("%s - %s a été ajouté à la file d\'attente" % (song.title, song.artist))
         if self.size == self.cursor + 1:
             await self.startPlayback()
-        return 0
 
     def nextSong(self):
         self.cursor = self.cursor + 1
@@ -75,30 +75,19 @@ class Queue():
                 pass
 
     def removeEntry(self, index):
-        if index >= 0 and index < self.size:
-            self.content.pop(index)
-            self.size = self.size - 1
-            return 0
-        else:
-            return None
+        self.content.pop(index)
+        self.size = self.size - 1
 
     def moveEntry(self, frm, to):
-        if frm >= 0 and frm < self.size and to >= 0 and to < self.size and to != frm:
-            song = self.content[frm]
-            self.content.pop(frm)
-            self.content.insert(to, song)
-            return 0
-        else:
-            return None
+        song = self.content[frm]
+        self.content.pop(frm)
+        self.content.insert(to, song)
 
     def getIndex(self, song):
         return self.content.index(song)
 
     def getSong(self, index):
-        if index >= 0 and index < self.size:
-            return self.content[index]
-        else:
-            return None
+        return self.content[index]
 
 
 class Music(commands.Cog):
@@ -211,28 +200,47 @@ class Music(commands.Cog):
         return await context.send(list)
 
     @commands.command(aliases=['mv', 'déplacer'])
-    async def move(self, context, frm: int, to: int):
+    async def move(self, context, frm: int = None, to: int = None):
+        if frm == None or to == None:
+            return await context.send('ui')
+
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
-        t = Queues[guild].getSong(frm).title
-        r = Queues[guild].moveEntry(frm, to)
-        if r == 0:
-            return await context.send('%s a été déplacé de %d vers %d' % (t, frm, to))
+
+        if frm == to:
+            return await context.send('La destination ne peut pas être égale à la source')
+
+        if frm < Queues[guild] and frm >= 0 and to < Queues[guild] and to >= 0:
+            title = Queues[guild].getSong(frm).title
+            rep = Queues[guild].moveEntry(frm, to)
+            if rep == 0:
+                return await context.send('%s a été déplacé de %d vers %d' % (title, frm, to))
+            else:
+                return await context.send('Erreur lors du déplacement de la chanson')
         else:
-            return await context.send('Erreur lors du déplacement de la chanson')
+            return await context.send('Une des deux positions est invalide')
 
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
-    async def remove(self, context, index: int):
+    async def remove(self, context, index: int = None):
+        if index == None:
+            return await context.send('ui')
+
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
-        t = Queues[guild].getSong(index).title
-        r = Queues[guild].removeEntry(index)
-        if r == 0:
-            return await context.send('%s a bien été supprimé' % (t))
+
+        if index < Queues[guild].size and index >= 0:
+            title = Queues[guild].getSong(index).title
+            filename = Queues[guild].getSong(index).filename
+            rep = Queues[guild].removeEntry(index)
+            if rep == 0:
+                os.remove(filename)
+                return await context.send('%s a bien été supprimé' % (title))
+            else:
+                return await context.send('Erreur lors de la suppression de la chanson')
         else:
-            return await context.send('Erreur lors de la suppression de la chanson')
+            return await context.send('L\'index %d n\'existe pas' % (index))
 
     @commands.command(aliases=['s', 'passer'])
     async def skip(self, context):
