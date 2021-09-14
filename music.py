@@ -96,7 +96,6 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['p', 'lire', 'jouer'])
     async def play(self, context, *, query: str = None):
-        """Plays a song from YouTube"""
         if query is None:
             return await context.send('Aucune musique n\'est précisé')
 
@@ -184,7 +183,7 @@ class Music(commands.Cog):
         embed.set_footer(text="Demandé par %s" %
                          applicant.display_name, icon_url=applicant.avatar_url_as())
 
-        await context.send(embed=embed)
+        return await context.send(embed=embed)
 
     @commands.command(aliases=['q', 'file'])
     async def queue(self, context):
@@ -224,7 +223,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
     async def remove(self, context, index: int = None):
         if index == None:
-            return await context.send('ui')
+            return await context.send(embed=Help.get(context, 'remove'))
 
         guild = context.guild
         if guild not in Queues:
@@ -250,7 +249,7 @@ class Music(commands.Cog):
         else:
             return await context.send('Aucune lecture en cours')
 
-    @commands.command(aliases=['pauser'])
+    @commands.command(aliases=['pauser', 'suspendre', 'uspendre', 'halte'])
     async def pause(self, context):
         voiceClient = context.voice_client
         if voiceClient is not None:
