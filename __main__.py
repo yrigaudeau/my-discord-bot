@@ -1,5 +1,5 @@
+import os
 from dotenv import load_dotenv
-from os import getenv
 from discord.ext import commands
 
 from music import Music
@@ -10,9 +10,12 @@ load_dotenv()
 
 description = 'Alors, on attend pas Patrick ???'
 PREFIX = '$'
-TOKEN = getenv("TOKEN")
+TOKEN = os.getenv("TOKEN")
 
 if __name__ == "__main__":
+    if not os.path.isdir('dj-patrick'):
+        os.mkdir('dj-patrick')
+
     bot = commands.Bot(command_prefix=commands.when_mentioned_or(PREFIX), description=description)
     @bot.event
     async def on_ready():
