@@ -33,6 +33,7 @@ python3 .
 ```bash
 cp my-discord-bot.service /etc/systemd/system
 cp -r ../my-discord-bot /opt
+systemctl daemon-reload
 systemctl enable my-discord-bot
 systemctl start my-discord-bot
 ```
