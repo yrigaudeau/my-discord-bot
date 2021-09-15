@@ -97,7 +97,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['p', 'lire', 'jouer'])
     async def play(self, context, *, query: str = None):
         if query is None:
-            return await context.send('Aucune musique n\'est précisé')
+            return await context.send(embed=Help.get(context, 'play'))
 
         authorVoice = context.author.voice
         voiceClient = context.voice_client
@@ -200,12 +200,12 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['mv', 'déplacer'])
     async def move(self, context, frm: int = None, to: int = None):
-        if frm == None or to == None:
-            return await context.send('ui')
-
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
+
+        if frm is None or to is None:
+            return await context.send(embed=Help.get(context, 'move'))
 
         if frm == to:
             return await context.send('La destination ne peut pas être égale à la source')
@@ -222,12 +222,12 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
     async def remove(self, context, index: int = None):
-        if index == None:
-            return await context.send(embed=Help.get(context, 'remove'))
-
         guild = context.guild
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
+
+        if index is None:
+            return await context.send(embed=Help.get(context, 'remove'))
 
         if index < Queues[guild].size and index >= 0:
             title = Queues[guild].getSong(index).title

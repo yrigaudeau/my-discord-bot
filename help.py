@@ -7,57 +7,99 @@ with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json") as f:
     config = json.load(f)
     f.close()
 
-commands_desc = {
-    'play': 'Permet de lire un son insane depuis Youtube ou un lien direct',
-    'nowplaying': 'Permet de connaître le son en lecture et son avancement',
-    'queue': 'Affiche la liste d\'attente',
-    'move': 'Permet de déplacer une musique dans la liste d\'attente',
-    'skip': 'Passe la musique actuelle',
-    'remove': 'Supprime une musique de la liste d\'attente',
-    'pause': 'Met en pause la lecture',
-    'resume': 'Reprend la lecture',
-    'stop': 'Arrete la lecture et vide la liste d\'attente'
+PREFIX = config['prefix']
+
+categories = {
+    'description': {
+        'music': 'Contient les commandes liées à l\'écoute musicale',
+        'manage': 'Contient les commandes de gestion du bot\nAccessible à tous les utilisateurs disposant de la permission "Gérer les messages"'
+    },
+    'displayName': {
+        'music': 'Musique',
+        'manage': 'Gestion'
+    }
 }
 
-commands_usage = {
-    'play': '"lien Youtube / lien http / recherche Youtube"',
-    'move': '"position actuelle" "nouvelle position"',
-    'remove': '"position"',
+commandsList = {
+    'description': {
+        'music': {
+            'play': 'Permet de lire un son insane depuis Youtube ou un lien direct',
+            'nowplaying': 'Permet de connaître le son en lecture et son avancement',
+            'queue': 'Affiche la liste d\'attente',
+            'move': 'Permet de déplacer une musique dans la liste d\'attente',
+            'skip': 'Passe la musique actuelle',
+            'remove': 'Supprime une musique de la liste d\'attente',
+            'pause': 'Met en pause la lecture',
+            'resume': 'Reprend la lecture',
+            'stop': 'Arrete la lecture et vide la liste d\'attente'
+        },
+        'manage': {
+            'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)'
+        }
+    },
+    'usage': {
+        'music': {
+            'play': '<lien Youtube / lien http / recherche Youtube>',
+            'move': '<position actuelle> <nouvelle position>',
+            'remove': '<position>'
+        },
+        'manage': {
+            'set-prefix': '"nouveau préfixe"'
+        }
+    }
 }
+
 
 class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def get(context, command):
-        title = "Commande %s%s" % (config['prefix'], command)
+    def get(context, category, command):
+        title = "Commande %s%s" % (PREFIX, command)
 
         embed = discord.Embed(
             title=title,
-            description=commands_desc[command],
+            description=commandsList['description'][category][command],
             color=0x565493
         )
-        embed.set_author(name="Aide", icon_url="https://i.imgur.com/C66eNWB.jpg")
+        embed.set_author(
+            name="Aide", icon_url="https://i.imgur.com/C66eNWB.jpg")
 
-        if command in commands_usage:
-            embed.add_field(name="Utilisation", value="%s%s %s" % (config['prefix'], command, commands_usage[command]), inline=False)
+        if command in commandsList['usage']:
+            embed.add_field(name="Utilisation", value="%s%s %s" % (
+                PREFIX, command, commandsList['usage'][category][command]), inline=False)
 
         return embed
 
     @commands.command(aliases=['aide', 'h'])
-    async def help(self, context):
+    async def help(self, context, *, query: str = None):
         embed = discord.Embed(
-            title='La page d\'aide wallah',
-            description='tavu',
             color=0x565493
         )
-        embed.set_author(name="Aide", icon_url="https://i.imgur.com/C66eNWB.jpg")
 
-        for command in commands_desc:
-            if command in commands_usage:
-                embed.add_field(name=config['prefix']+command, value=commands_desc[command], inline=True)
-                embed.add_field(name="Utilisation", value="%s%s %s" % (config['prefix'], command, commands_usage[command]), inline=True)
+        if query is None:
+            for category in categories['description']:
+                embed.set_author(name="Aide de %s" % (
+                    self.bot.user.display_name), icon_url="https://i.imgur.com/C66eNWB.jpg")
+                embed.title = 'Liste des catégories de commandes'
+                embed.add_field(name=categories['displayName'][category], value="-> %shelp %s\n\n%s" % (
+                    PREFIX, category, categories['description'][category]), inline=False)
+        else:
+            if query in categories['description']:
+                category = query
+                embed.set_author(name="Aide de %s" % (
+                    categories['displayName'][category]), icon_url="https://i.imgur.com/C66eNWB.jpg")
+                embed.title = 'Liste des commandes de %s' % categories['displayName'][category]
+                for command in commandsList['description'][category]:
+                    if command in commandsList['usage'][category]:
+                        embed.add_field(
+                            name=PREFIX+command, value=commandsList['description'][category][command], inline=True)
+                        embed.add_field(name="Utilisation", value="%s%s %s" % (
+                            PREFIX, command, commandsList['usage'][category][command]), inline=True)
+                    else:
+                        embed.add_field(
+                            name=PREFIX+command, value=commandsList['description'][category][command], inline=False)
             else:
-                embed.add_field(name=config['prefix']+command, value=commands_desc[command], inline=False)
+                return await context.send("La catégorie %s n'existe pas\n%shelp pour obtenir de l'aide" % (query, PREFIX))
 
         return await context.send(embed=embed)

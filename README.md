@@ -16,7 +16,7 @@ pip install -r requirements.txt
 ```json
 {
     "prefix": "$",
-    "token": "'your-token'"
+    "token": "<your-token>"
 }
 ```
 Put the json above in a config.json file with your favorite text editor (e.g. nano)
