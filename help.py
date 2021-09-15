@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 from config import Config
 
-PREFIX = Config.getPrefix()
-
 categories = {
     'description': {
         'music': 'Contient les commandes liées à l\'écoute musicale',
@@ -50,6 +48,7 @@ class Help(commands.Cog):
         self.bot = bot
 
     def get(context, category, command):
+        PREFIX = Config.getPrefix()
         title = "Commande %s%s" % (PREFIX, command)
 
         embed = discord.Embed(
@@ -68,6 +67,7 @@ class Help(commands.Cog):
 
     @commands.command(aliases=['aide', 'h', 'oskour', 'aled'])
     async def help(self, context, *, query: str = None):
+        PREFIX = Config.getPrefix()
         embed = discord.Embed(
             color=0x565493
         )
