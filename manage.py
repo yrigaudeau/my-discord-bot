@@ -1,11 +1,5 @@
-import os
-import discord
 from discord.ext import commands
-
-import json
-with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json") as f:
-    config = json.load(f)
-    f.close()
+from config import Config
 
 
 class Manage(commands.Cog):
@@ -14,4 +8,6 @@ class Manage(commands.Cog):
 
     @commands.command(name='set-prefix')
     async def set_prefix(self, context, *, query: str = None):
-        pass
+        Config.setPrefix(query)
+
+    

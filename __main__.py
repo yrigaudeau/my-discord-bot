@@ -6,21 +6,19 @@ from music import Music
 from fun import Fun
 from manage import Manage
 from help import Help
+from config import Config
 
-import json
-with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json") as f:
-    config = json.load(f)
-    f.close()
-
-description = 'Alors, on attend pas Patrick ???'
-PREFIX = config['prefix']
-TOKEN = config['token']
+PREFIX = Config.getPrefix()
+TOKEN = Config.conf['token']
 
 if __name__ == "__main__":
-    if not os.path.isdir('dj-patrick'):
+    if os.path.isdir('dj-patrick'):
+        for f in os.listdir('dj-patrick'):
+            os.remove('dj-patrick/' + f)
+    else:
         os.mkdir('dj-patrick')
 
-    bot = commands.Bot(command_prefix=commands.when_mentioned_or(PREFIX), description=description, help_command=None)
+    bot = commands.Bot(command_prefix=Config.getPrefix, help_command=None)
 
     @bot.event
     async def on_ready():

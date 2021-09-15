@@ -1,13 +1,8 @@
-import os
 import discord
 from discord.ext import commands
+from config import Config
 
-import json
-with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json") as f:
-    config = json.load(f)
-    f.close()
-
-PREFIX = config['prefix']
+PREFIX = Config.getPrefix()
 
 categories = {
     'description': {
@@ -71,7 +66,7 @@ class Help(commands.Cog):
 
         return embed
 
-    @commands.command(aliases=['aide', 'h'])
+    @commands.command(aliases=['aide', 'h', 'oskour', 'aled'])
     async def help(self, context, *, query: str = None):
         embed = discord.Embed(
             color=0x565493
@@ -82,7 +77,7 @@ class Help(commands.Cog):
                 embed.set_author(name="Aide de %s" % (
                     self.bot.user.display_name), icon_url="https://i.imgur.com/C66eNWB.jpg")
                 embed.title = 'Liste des catégories de commandes'
-                embed.add_field(name=categories['displayName'][category], value="-> %shelp %s\n\n%s" % (
+                embed.add_field(name=categories['displayName'][category], value="-> %shelp %s\n%s" % (
                     PREFIX, category, categories['description'][category]), inline=False)
         else:
             if query in categories['description']:
