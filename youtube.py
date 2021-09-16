@@ -28,7 +28,7 @@ class Youtube():
         videosResult = await videosSearch.next()
         return videosResult["result"][0]
 
-    async def downloadSong(url):
+    async def downloadAudio(url):
         data = ytdl.extract_info(url, download=False)
         if data['is_live'] == True:
             filename = data['url']

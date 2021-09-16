@@ -18,7 +18,7 @@ if __name__ == "__main__":
     else:
         os.mkdir('dj-patrick')
 
-    bot = commands.Bot(command_prefix=Config.getPrefix, help_command=None)
+    bot = commands.Bot(command_prefix=lambda e, f: Config.getPrefix(), help_command=None)
 
     @bot.event
     async def on_ready():

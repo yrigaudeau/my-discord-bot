@@ -12,7 +12,7 @@ class Config():
         f.close()
 
     @classmethod
-    def getPrefix(self, bot=None, message=None):
+    def getPrefix(self):
         return self.conf['prefix']
 
     @classmethod

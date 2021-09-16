@@ -50,19 +50,12 @@ class Queue():
         # player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
         player = discord.FFmpegPCMAudio(
             self.content[self.cursor].filename, options="-vn")
-        self.voice_client.play(player, after=lambda e: self.nextSong())
+        self.voice_client.play(player, after=lambda e: self.nextEntry())
         self.starttime = time.time()
 
         await self.text_channel.send('En lecture : %s - %s' % (self.content[self.cursor].title, self.content[self.cursor].artist))
 
-    async def addEntry(self, song):
-        self.content.append(song)
-        self.size = self.size + 1
-        await self.text_channel.send("%s - %s a été ajouté à la file d\'attente" % (song.title, song.artist))
-        if self.size == self.cursor + 1:
-            await self.startPlayback()
-
-    def nextSong(self):
+    def nextEntry(self):
         self.cursor = self.cursor + 1
         print("next")
         if self.cursor < self.size:
@@ -74,19 +67,26 @@ class Queue():
             except:
                 pass
 
+    async def addEntry(self, entry):
+        self.content.append(entry)
+        self.size = self.size + 1
+        await self.text_channel.send("%s - %s a été ajouté à la file d\'attente" % (entry.title, entry.artist))
+        if self.size == self.cursor + 1:
+            await self.startPlayback()
+
     def removeEntry(self, index):
         self.content.pop(index)
         self.size = self.size - 1
 
     def moveEntry(self, frm, to):
-        song = self.content[frm]
+        entry = self.content[frm]
         self.content.pop(frm)
-        self.content.insert(to, song)
+        self.content.insert(to, entry)
 
-    def getIndex(self, song):
-        return self.content.index(song)
+    def getIndex(self, entry):
+        return self.content.index(entry)
 
-    def getSong(self, index):
+    def getEntry(self, index):
         return self.content[index]
 
 
@@ -129,7 +129,7 @@ class Music(commands.Cog):
                     print(url)
 
                 try:
-                    data, filename = await Youtube.downloadSong(url)
+                    data, filename = await Youtube.downloadAudio(url)
                 except:
                     return await context.send('Le lien n\'est pas valide')
 
@@ -211,7 +211,7 @@ class Music(commands.Cog):
             return await context.send('La destination ne peut pas être égale à la source')
 
         if frm < Queues[guild] and frm >= 0 and to < Queues[guild] and to >= 0:
-            title = Queues[guild].getSong(frm).title
+            title = Queues[guild].getEntry(frm).title
             rep = Queues[guild].moveEntry(frm, to)
             if rep == 0:
                 return await context.send('%s a été déplacé de %d vers %d' % (title, frm, to))
@@ -230,8 +230,8 @@ class Music(commands.Cog):
             return await context.send(embed=Help.get(context, 'remove'))
 
         if index < Queues[guild].size and index >= 0:
-            title = Queues[guild].getSong(index).title
-            filename = Queues[guild].getSong(index).filename
+            title = Queues[guild].getEntry(index).title
+            filename = Queues[guild].getEntry(index).filename
             rep = Queues[guild].removeEntry(index)
             if rep == 0:
                 os.remove(filename)
@@ -272,9 +272,9 @@ class Music(commands.Cog):
         voiceClient = context.voice_client
         guild = context.guild
         if voiceClient is not None:
-            for song in Queues[guild].content:
-                if song.entryType != "live":
-                    os.remove(song.filename)
+            for entry in Queues[guild].content:
+                if entry.entryType != "live":
+                    os.remove(entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()
