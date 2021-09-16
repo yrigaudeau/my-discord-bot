@@ -193,10 +193,20 @@ class Music(commands.Cog):
 
         list = ""
         for i in range(Queues[guild].size):
-            list = list + str(i) + " - " + Queues[guild].content[i].title + \
-                " - " + Queues[guild].content[i].artist + "\n"
+            indicator = "⠀⠀  "
+            if i == Queues[guild].cursor:
+                indicator = "→⠀"
+            list += "%s%d: %s - %s\n" % (
+                indicator, i, Queues[guild].content[i].title, Queues[guild].content[i].artist)
 
-        return await context.send(list)
+        embed = discord.Embed(
+            description=list,
+            color=0x565493
+        )
+        embed.set_author(name="Liste de lecture",
+                         icon_url="https://i.imgur.com/C66eNWB.jpg")
+
+        return await context.send(embed=embed)
 
     @commands.command(aliases=['mv', 'déplacer'])
     async def move(self, context, frm: int = None, to: int = None):
@@ -212,11 +222,8 @@ class Music(commands.Cog):
 
         if frm < Queues[guild] and frm >= 0 and to < Queues[guild] and to >= 0:
             title = Queues[guild].getEntry(frm).title
-            rep = Queues[guild].moveEntry(frm, to)
-            if rep == 0:
-                return await context.send('%s a été déplacé de %d vers %d' % (title, frm, to))
-            else:
-                return await context.send('Erreur lors du déplacement de la chanson')
+            Queues[guild].moveEntry(frm, to)
+            return await context.send('%s a été déplacé de %d vers %d' % (title, frm, to))
         else:
             return await context.send('Une des deux positions est invalide')
 
@@ -232,12 +239,9 @@ class Music(commands.Cog):
         if index < Queues[guild].size and index >= 0:
             title = Queues[guild].getEntry(index).title
             filename = Queues[guild].getEntry(index).filename
-            rep = Queues[guild].removeEntry(index)
-            if rep == 0:
-                os.remove(filename)
-                return await context.send('%s a bien été supprimé' % (title))
-            else:
-                return await context.send('Erreur lors de la suppression de la chanson')
+            Queues[guild].removeEntry(index)
+            os.remove(filename)
+            return await context.send('%s a bien été supprimé' % (title))
         else:
             return await context.send('L\'index %d n\'existe pas' % (index))
 
