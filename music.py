@@ -146,10 +146,11 @@ class Music(commands.Cog):
                 await voiceClient.move_to(authorVoice.channel)
             else:
                 await authorVoice.channel.connect()
+                Queues[guild].voice_client = context.voice_client
 
             await queue.addEntry(entry)
 
-        return 0
+        pass
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
