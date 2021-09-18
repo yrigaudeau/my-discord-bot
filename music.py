@@ -101,18 +101,17 @@ class Music(commands.Cog):
 
         authorVoice = context.author.voice
         voiceClient = context.voice_client
+
         if authorVoice is None:
             return await context.send('Non connecté à un salon vocal')
-        elif voiceClient is not None:
-            await voiceClient.move_to(authorVoice.channel)
-        else:
-            await authorVoice.channel.connect()
 
         async with context.typing():
             guild = context.guild
             if guild not in Queues:
-                Queues[guild] = Queue(context.voice_client, context.channel)
+                Queues[guild] = Queue(voiceClient, context.channel)
             queue = Queues[guild]
+
+            entry = None
 
             if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
                 # Other streams
@@ -143,7 +142,12 @@ class Music(commands.Cog):
                 entry = Entry(applicant, filename, entryType)
                 entry.buildMetadataYoutube(data)
 
-                await queue.addEntry(entry)
+            if voiceClient is not None:
+                await voiceClient.move_to(authorVoice.channel)
+            else:
+                await authorVoice.channel.connect()
+
+            await queue.addEntry(entry)
 
         return 0
 
@@ -153,17 +157,18 @@ class Music(commands.Cog):
         if guild not in Queues:
             return await context.send('Rien en lecture')
 
-        title = Queues[guild].content[Queues[guild].cursor].title
-        artist = Queues[guild].content[Queues[guild].cursor].artist
-        album = Queues[guild].content[Queues[guild].cursor].album
-        url = Queues[guild].content[Queues[guild].cursor].url
-        entryType = Queues[guild].content[Queues[guild].cursor].entryType
-        image = Queues[guild].content[Queues[guild].cursor].thumbnail
-        applicant = Queues[guild].content[Queues[guild].cursor].applicant
+        entry = Queues[guild].content[Queues[guild].cursor]
+        title = entry.title
+        artist = entry.artist
+        album = entry.album
+        url = entry.url
+        entryType = entry.entryType
+        image = entry.thumbnail
+        applicant = entry.applicant
 
         current = time_format(int(time.time() - Queues[guild].starttime))
         duration = time_format(
-            Queues[guild].content[Queues[guild].cursor].duration)
+            entry.duration)
 
         content = "Progression : %s / %s\n" % (current, duration)
         if album is not None:
@@ -237,11 +242,11 @@ class Music(commands.Cog):
             return await context.send(embed=Help.get(context, 'remove'))
 
         if index < Queues[guild].size and index >= 0:
-            title = Queues[guild].getEntry(index).title
-            filename = Queues[guild].getEntry(index).filename
+            entry = Queues[guild].getEntry(index)
             Queues[guild].removeEntry(index)
-            os.remove(filename)
-            return await context.send('%s a bien été supprimé' % (title))
+            if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
+                os.remove('dj-patrick/' + entry.filename)
+            return await context.send('%s a bien été supprimé' % (entry.title))
         else:
             return await context.send('L\'index %d n\'existe pas' % (index))
 
@@ -277,8 +282,8 @@ class Music(commands.Cog):
         guild = context.guild
         if voiceClient is not None:
             for entry in Queues[guild].content:
-                if entry.entryType != "live":
-                    os.remove(entry.filename)
+                if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
+                    os.remove('dj-patrick/' + entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()
