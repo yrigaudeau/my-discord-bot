@@ -12,14 +12,14 @@ cd my-discord-bot
 pip install -r requirements.txt
 ```
 
-### Create config file
+### Config file
 ```json
 {
     "prefix": "$",
     "token": "<your-token>"
 }
 ```
-Put the json above in a config.json file with your favorite text editor (e.g. nano)
+Put your token in the config.json file using your favorite text editor (e.g. nano)
 ```bash
 nano config.json
 ```
