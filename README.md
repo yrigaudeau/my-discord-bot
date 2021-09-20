@@ -16,6 +16,7 @@ pip install -r requirements.txt
 ```json
 {
     "prefix": "$",
+    "workDir": "/tmp/dj-patrick/",
     "token": "<your-token>"
 }
 ```

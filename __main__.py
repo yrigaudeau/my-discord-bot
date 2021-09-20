@@ -10,13 +10,14 @@ from config import Config
 
 PREFIX = Config.getPrefix()
 TOKEN = Config.conf['token']
+WORKDIR = Config.conf['workDir']
 
 if __name__ == "__main__":
-    if os.path.isdir('dj-patrick'):
-        for f in os.listdir('dj-patrick'):
-            os.remove('dj-patrick/' + f)
+    if os.path.isdir(WORKDIR):
+        for f in os.listdir(WORKDIR):
+            os.remove(WORKDIR + f)
     else:
-        os.mkdir('dj-patrick')
+        os.mkdir(WORKDIR)
 
     bot = commands.Bot(command_prefix=lambda e, f: Config.getPrefix(), help_command=None)
 

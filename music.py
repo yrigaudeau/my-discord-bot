@@ -4,8 +4,10 @@ import discord
 from discord.ext import commands
 from youtube import Youtube
 from help import Help
+from config import Config
 import time
 
+WORKDIR = Config.conf['workDir']
 Queues = {}
 
 
@@ -29,8 +31,10 @@ class Entry():
         self.entryType = entryType
 
     def buildMetadataYoutube(self, data):
-        self.title = data['track'] if 'track' in data else data['title']
-        self.artist = data['artist'] if 'artist' in data else data['channel']
+        #self.title = data['track'] if 'track' in data else data['title']
+        self.title = data['title']
+        #self.artist = data['artist'] if 'artist' in data else data['channel']
+        self.artist = data['channel']
         self.album = data['album'] if 'album' in data else None
         self.duration = data['duration']
         self.thumbnail = data['thumbnail']
@@ -48,12 +52,13 @@ class Queue():
 
     async def startPlayback(self):
         # player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
+        entry = self.content[self.cursor]
         player = discord.FFmpegPCMAudio(
-            self.content[self.cursor].filename, options="-vn")
+            WORKDIR + entry.filename, options="-vn")
         self.voice_client.play(player, after=lambda e: self.nextEntry())
         self.starttime = time.time()
 
-        await self.text_channel.send('En lecture : %s - %s' % (self.content[self.cursor].title, self.content[self.cursor].artist))
+        await self.text_channel.send('En lecture : %s' % (entry.title))
 
     def nextEntry(self):
         self.cursor = self.cursor + 1
@@ -70,7 +75,7 @@ class Queue():
     async def addEntry(self, entry):
         self.content.append(entry)
         self.size = self.size + 1
-        await self.text_channel.send("%s - %s a été ajouté à la file d\'attente" % (entry.title, entry.artist))
+        await self.text_channel.send("%s a été ajouté à la file d\'attente" % (entry.title))
         if self.size == self.cursor + 1:
             await self.startPlayback()
 
@@ -136,17 +141,19 @@ class Music(commands.Cog):
                 entryType = "Vidéo"
                 if filename.startswith("https://"):
                     entryType = "Direct"
-                elif 'Music' in data['categories']:
-                    entryType = "Musique"
+                # elif 'Music' in data['categories']:
+                #    entryType = "Musique"
 
                 entry = Entry(applicant, filename, entryType)
                 entry.buildMetadataYoutube(data)
 
             if voiceClient is not None:
                 await voiceClient.move_to(authorVoice.channel)
+                print("voice client not none")
             else:
                 await authorVoice.channel.connect()
                 Queues[guild].voice_client = context.voice_client
+                print("voice client none")
 
             await queue.addEntry(entry)
 
@@ -155,7 +162,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
         guild = context.guild
-        if guild not in Queues:
+        if guild not in Queues or Queues[guild].cursor == Queues[guild].size:
             return await context.send('Rien en lecture')
 
         entry = Queues[guild].content[Queues[guild].cursor]
@@ -168,16 +175,16 @@ class Music(commands.Cog):
         applicant = entry.applicant
 
         current = time_format(int(time.time() - Queues[guild].starttime))
-        duration = time_format(
-            entry.duration)
+        duration = time_format(entry.duration)
 
-        content = "Progression : %s / %s\n" % (current, duration)
+        content = "Chaîne : %s\n" % (artist)
+        content += "Progression : %s / %s\n" % (current, duration)
         if album is not None:
             content += "Album : %s\n" % (album)
         content += "Type : %s" % (entryType)
 
         embed = discord.Embed(
-            title='%s - %s' % (title, artist),
+            title=title,
             url=url,
             description=content,
             color=0x565493
@@ -199,11 +206,12 @@ class Music(commands.Cog):
 
         list = ""
         for i in range(Queues[guild].size):
-            indicator = "⠀⠀  "
-            if i == Queues[guild].cursor:
+            entry = Queues[guild].content[i]
+            indicator = "⠀⠀ "
+            if Queues[guild].cursor == i:
                 indicator = "→⠀"
-            list += "%s%d: %s - %s\n" % (
-                indicator, i, Queues[guild].content[i].title, Queues[guild].content[i].artist)
+            list += "%s%d: %s - %s\n" % (indicator,
+                                         i, entry.title, time_format(entry.duration))
 
         embed = discord.Embed(
             description=list,
@@ -236,6 +244,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
     async def remove(self, context, index: int = None):
         guild = context.guild
+        voiceClient = context.voice_client
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
 
@@ -245,8 +254,12 @@ class Music(commands.Cog):
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].getEntry(index)
             Queues[guild].removeEntry(index)
-            if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
-                os.remove(entry.filename)
+            if Queues[guild].cursor <= index:
+                Queues[guild].cursor -= 1
+            if Queues[guild].cursor == index:
+                voiceClient.stop()
+            if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
+                os.remove(WORKDIR + entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
         else:
             return await context.send('L\'index %d n\'existe pas' % (index))
@@ -283,8 +296,8 @@ class Music(commands.Cog):
         guild = context.guild
         if voiceClient is not None:
             for entry in Queues[guild].content:
-                if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
-                    os.remove(entry.filename)
+                if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
+                    os.remove(WORKDIR + entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()

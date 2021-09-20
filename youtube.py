@@ -1,12 +1,15 @@
 from youtubesearchpython.__future__ import VideosSearch
 import youtube_dl
 
+from config import Config
+WORKDIR = Config.conf['workDir']
+
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'outtmpl': 'dj-patrick/%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'outtmpl': WORKDIR + '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -34,6 +37,6 @@ class Youtube():
             filename = data['url']
         else:
             data = ytdl.extract_info(url, download=True)
-            filename = ytdl.prepare_filename(data)
+            filename = ytdl.prepare_filename(data)[len(WORKDIR):]
         print(filename)
         return data, filename
