@@ -1,4 +1,7 @@
+import os
 import json
+
+FILE = os.path.dirname(os.path.realpath(__file__)) + "/config.json"
 
 class Config():
     def __init__(self):
@@ -6,7 +9,7 @@ class Config():
 
     @classmethod
     def readConfig(self):
-        f = open("config.json", 'r')
+        f = open(FILE, 'r')
         self.conf = json.load(f)
         f.close()
 
@@ -17,7 +20,7 @@ class Config():
     @classmethod
     def setPrefix(self, prefix):
         self.conf['prefix'] = prefix
-        f = open("config.json", 'w')
+        f = open(FILE, 'w')
         json.dump(self.conf, f)
         f.close()
 
