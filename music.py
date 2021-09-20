@@ -246,7 +246,7 @@ class Music(commands.Cog):
             entry = Queues[guild].getEntry(index)
             Queues[guild].removeEntry(index)
             if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
-                os.remove('dj-patrick/' + entry.filename)
+                os.remove(entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
         else:
             return await context.send('L\'index %d n\'existe pas' % (index))
@@ -284,7 +284,7 @@ class Music(commands.Cog):
         if voiceClient is not None:
             for entry in Queues[guild].content:
                 if entry.entryType != "live" and entry.filename in os.listdir('dj-patrick'):
-                    os.remove('dj-patrick/' + entry.filename)
+                    os.remove(entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()
