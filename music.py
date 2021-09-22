@@ -132,10 +132,10 @@ class Music(commands.Cog):
                     url = result["link"]
                     print(url)
 
-                #try:
-                data, filename = await Youtube.downloadAudio(url, self.bot.loop)
-                #except:
-                    #return await context.send('Le lien n\'est pas valide')
+                try:
+                    data, filename = await Youtube.downloadAudio(url, self.bot.loop)
+                except:
+                    return await context.send('Le lien n\'est pas valide')
 
                 applicant = context.author
                 entryType = "Vidéo"
@@ -162,6 +162,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
         guild = context.guild.id
+        voiceClient = context.voice_client
         if guild not in Queues or Queues[guild].cursor == Queues[guild].size:
             return await context.send('Rien en lecture')
 
@@ -189,8 +190,10 @@ class Music(commands.Cog):
             description=content,
             color=0x565493
         )
-        embed.set_author(name="En cours de lecture",
-                         icon_url="https://i.imgur.com/C66eNWB.jpg")
+        name = "En cours de lecture"
+        if not voiceClient.is_connected():
+            name = "En pause"
+        embed.set_author(name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
         embed.set_image(url=image)
         # embed.set_thumbnail(url="https://i.imgur.com/C66eNWB.jpg")
         embed.set_footer(text="Demandé par %s" %
@@ -234,7 +237,7 @@ class Music(commands.Cog):
         if frm == to:
             return await context.send('La destination ne peut pas être égale à la source')
 
-        if frm < Queues[guild] and frm >= 0 and to < Queues[guild] and to >= 0:
+        if frm < Queues[guild].size and frm >= 0 and to < Queues[guild].size and to >= 0:
             title = Queues[guild].getEntry(frm).title
             Queues[guild].moveEntry(frm, to)
             return await context.send('%s a été déplacé de %d vers %d' % (title, frm, to))
