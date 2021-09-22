@@ -27,7 +27,8 @@ commandsList = {
             'stop': 'Arrete la lecture et vide la liste d\'attente'
         },
         'manage': {
-            'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)'
+            'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)',
+            'shutdown': 'Eteindre le bot'
         }
     },
     'usage': {
