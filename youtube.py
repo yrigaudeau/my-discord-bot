@@ -1,5 +1,6 @@
 from youtubesearchpython.__future__ import VideosSearch
 import youtube_dl
+import asyncio
 
 from config import Config
 WORKDIR = Config.conf['workDir']
@@ -31,12 +32,13 @@ class Youtube():
         videosResult = await videosSearch.next()
         return videosResult["result"][0]
 
-    async def downloadAudio(url):
+    async def downloadAudio(url, loop):
+        loop = loop or asyncio.get_event_loop()
         data = ytdl.extract_info(url, download=False)
         if data['is_live'] == True:
             filename = data['url']
         else:
-            data = ytdl.extract_info(url, download=True)
+            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=True))
             filename = ytdl.prepare_filename(data)[len(WORKDIR):]
         print(filename)
         return data, filename

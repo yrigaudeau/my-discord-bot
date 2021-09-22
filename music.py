@@ -70,7 +70,7 @@ class Queue():
             try:
                 fut.result()
             except:
-                pass
+                print("coro error")
 
     async def addEntry(self, entry):
         self.content.append(entry)
@@ -111,7 +111,7 @@ class Music(commands.Cog):
             return await context.send('Non connecté à un salon vocal')
 
         async with context.typing():
-            guild = context.guild
+            guild = context.guild.id
             if guild not in Queues:
                 Queues[guild] = Queue(voiceClient, context.channel)
             queue = Queues[guild]
@@ -132,10 +132,10 @@ class Music(commands.Cog):
                     url = result["link"]
                     print(url)
 
-                try:
-                    data, filename = await Youtube.downloadAudio(url)
-                except:
-                    return await context.send('Le lien n\'est pas valide')
+                #try:
+                data, filename = await Youtube.downloadAudio(url, self.bot.loop)
+                #except:
+                    #return await context.send('Le lien n\'est pas valide')
 
                 applicant = context.author
                 entryType = "Vidéo"
@@ -161,7 +161,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
-        guild = context.guild
+        guild = context.guild.id
         if guild not in Queues or Queues[guild].cursor == Queues[guild].size:
             return await context.send('Rien en lecture')
 
@@ -200,7 +200,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['q', 'file'])
     async def queue(self, context):
-        guild = context.guild
+        guild = context.guild.id
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
 
@@ -224,7 +224,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['mv', 'déplacer'])
     async def move(self, context, frm: int = None, to: int = None):
-        guild = context.guild
+        guild = context.guild.id
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
 
@@ -243,7 +243,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
     async def remove(self, context, index: int = None):
-        guild = context.guild
+        guild = context.guild.id
         voiceClient = context.voice_client
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
@@ -290,16 +290,16 @@ class Music(commands.Cog):
         else:
             return await context.send('Aucune lecture en cours')
 
-    @commands.command(aliases=['arreter', 'stopper', 'quitter', 'leave', 'hutup'])
+    @commands.command(aliases=['arreter', 'stopper', 'quitter', 'leave', 'hutup', 'top'])
     async def stop(self, context):
         voiceClient = context.voice_client
-        guild = context.guild
+        guild = context.guild.id
         if voiceClient is not None:
             for entry in Queues[guild].content:
                 if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
                     os.remove(WORKDIR + entry.filename)
             Queues.pop(guild)
-            voiceClient.stop()
+            # voiceClient.stop()
             await voiceClient.disconnect()
             return await context.send('Arrêté')
         else:

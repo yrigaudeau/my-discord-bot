@@ -1,6 +1,8 @@
 import discord
+import asyncio
 from discord.ext import commands
 from config import Config
+
 
 class Manage(commands.Cog):
     def __init__(self, bot):
@@ -21,3 +23,25 @@ class Manage(commands.Cog):
     async def set_prefix_error(self, context, error):
         if isinstance(error, commands.MissingPermissions):
             return await context.send("Vous n'avez pas la permission d'éxécuter cette commande !")
+
+    @commands.command(aliases=['hutdown'])
+    @commands.is_owner()
+    async def shutdown(self, context):
+        authorVoice = context.author.voice
+        voiceClient = context.voice_client
+        if voiceClient is not None:
+            await voiceClient.move_to(context.author.voice.channel)
+        else:
+            await authorVoice.channel.connect()
+        voiceClient.stop()
+        player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
+        voiceClient.play(player)
+        await asyncio.sleep(2)
+        await voiceClient.disconnect()
+        await context.send("Adios...")
+        exit()
+
+    @shutdown.error
+    async def shutdown_error(self, context, error):
+        if isinstance(error, commands.NotOwner):
+            return await context.send("Je ne répond qu'au maître")
