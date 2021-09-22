@@ -6,10 +6,6 @@ class Fun(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def wow(self, ctx, *, channel: discord.VoiceChannel):
-        """Joins a voice channel"""
-
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-
-        await channel.connect()
+    async def ah(self, context, *, query: str = None):
+        if query == "quel plaisir":
+            return await context.send('$ahh')

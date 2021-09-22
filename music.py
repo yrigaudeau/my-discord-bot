@@ -304,8 +304,3 @@ class Music(commands.Cog):
             return await context.send('Arrêté')
         else:
             return await context.send('Aucune lecture en cours')
-
-    @commands.command()
-    async def ah(self, context, *, query: str = None):
-        if query == "quel plaisir":
-            return await context.send('$ahh')
