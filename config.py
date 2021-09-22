@@ -1,7 +1,8 @@
 import os
 import json
 
-FILE = os.path.dirname(os.path.realpath(__file__)) + "/config.json"
+CFGFOLDER = os.path.expanduser('~') + "/.config/dj-patrick/"
+CFGFILE = CFGFOLDER + "config.json"
 
 class Config():
     def __init__(self):
@@ -9,9 +10,13 @@ class Config():
 
     @classmethod
     def readConfig(self):
-        f = open(FILE, 'r')
-        self.conf = json.load(f)
-        f.close()
+        if os.path.isfile(CFGFILE):
+            f = open(CFGFILE, 'r')
+            self.conf = json.load(f)
+            f.close()
+        else:
+            print("Fichier config non trouvé:", CFGFILE)
+            exit()
 
     @classmethod
     def getPrefix(self):
@@ -20,7 +25,7 @@ class Config():
     @classmethod
     def setPrefix(self, prefix):
         self.conf['prefix'] = prefix
-        f = open(FILE, 'w')
+        f = open(CFGFILE, 'w')
         json.dump(self.conf, f)
         f.close()
 

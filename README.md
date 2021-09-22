@@ -22,7 +22,8 @@ pip install -r requirements.txt
 ```
 Put the json above in a config.json file with your favorite text editor (e.g. nano)
 ```bash
-nano config.json
+mkdir -p ~/.config/dj-patrick
+nano ~/.config/dj-patrick/config.json
 ```
 
 ### Run

@@ -2,11 +2,11 @@ import os
 import discord
 from discord.ext import commands
 
-from music import Music
-from fun import Fun
-from manage import Manage
-from help import Help
 from config import Config
+from help import Help
+from music import Music
+from manage import Manage
+from fun import Fun
 
 PREFIX = Config.getPrefix()
 TOKEN = Config.conf['token']
