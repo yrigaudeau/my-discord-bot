@@ -33,8 +33,9 @@ class Manage(commands.Cog):
             await voiceClient.move_to(context.author.voice.channel)
         else:
             await authorVoice.channel.connect()
-        voiceClient.stop()
         player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
+        if voiceClient.is_playing():
+            voiceClient.stop()
         voiceClient.play(player)
         await asyncio.sleep(2)
         await voiceClient.disconnect()
@@ -45,3 +46,5 @@ class Manage(commands.Cog):
     async def shutdown_error(self, context, error):
         if isinstance(error, commands.NotOwner):
             return await context.send("Je ne répond qu'au maître")
+        else:
+            print(error)
