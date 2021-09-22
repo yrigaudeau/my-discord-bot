@@ -151,7 +151,7 @@ class Music(commands.Cog):
                 await voiceClient.move_to(authorVoice.channel)
                 print("voice client not none")
             else:
-                await authorVoice.channel.connect()
+                await authorVoice.channel.connect(timeout=600, reconnect=True)
                 Queues[guild].voice_client = context.voice_client
                 print("voice client none")
 
@@ -276,8 +276,11 @@ class Music(commands.Cog):
     async def pause(self, context):
         voiceClient = context.voice_client
         if voiceClient is not None:
-            voiceClient.pause()
-            return await context.send('Mis en pause')
+            if voiceClient.is_playing():
+                voiceClient.pause()
+                return await context.send('Mis en pause')
+            else:
+                return await context.send('Déjà en pause')
         else:
             return await context.send('Aucune lecture en cours')
 
@@ -285,8 +288,11 @@ class Music(commands.Cog):
     async def resume(self, context):
         voiceClient = context.voice_client
         if voiceClient is not None:
-            voiceClient.resume()
-            return await context.send('Reprise de la lecture')
+            if voiceClient.is_paused():
+                voiceClient.resume()
+                return await context.send('Reprise de la lecture')
+            else:
+                return await context.send('Déjà en lecture')
         else:
             return await context.send('Aucune lecture en cours')
 
