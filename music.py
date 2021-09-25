@@ -25,10 +25,11 @@ def time_format(seconds):
 
 
 class Entry():
-    def __init__(self, applicant, filename, entryType):
+    def __init__(self, applicant, filename, entryType, fileSize):
         self.applicant = applicant
         self.filename = filename
         self.entryType = entryType
+        self.fileSize = fileSize
 
     def buildMetadataYoutube(self, data):
         #self.title = data['track'] if 'track' in data else data['title']
@@ -38,7 +39,20 @@ class Entry():
         self.album = data['album'] if 'album' in data else None
         self.duration = data['duration']
         self.thumbnail = data['thumbnail']
-        self.url = 'https://youtu.be/' + data['id']
+        self.url = 'https://www.youtube.com/watch?v=' + data['id']
+
+
+class Playlist():
+    def __init__(self):
+        self.content = []
+        
+    def addEntry(self, entry):
+        self.content.append(entry)
+
+    def buildMetadataYoutube(self, data):
+        self.title = data['title']
+        self.uploader = data['uploader']
+        self.url = 'https://www.youtube.com/playlist?list=' + data['id']
 
 
 class Queue():
@@ -51,7 +65,6 @@ class Queue():
         self.text_channel = text_channel
 
     async def startPlayback(self):
-        # player = await YTDLSource.from_url(self.content[self.cursor].url, loop=self.bot.loop)
         entry = self.content[self.cursor]
         player = discord.FFmpegPCMAudio(
             WORKDIR + entry.filename, options="-vn")
@@ -109,6 +122,12 @@ class Music(commands.Cog):
 
         if authorVoice is None:
             return await context.send('Non connecté à un salon vocal')
+        elif voiceClient is not None:
+            await voiceClient.move_to(authorVoice.channel)
+            print("voice client not none")
+        else:
+            voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
+            print("voice client none")
 
         async with context.typing():
             guild = context.guild.id
@@ -138,26 +157,30 @@ class Music(commands.Cog):
                     return await context.send('Le lien n\'est pas valide')
 
                 applicant = context.author
-                entryType = "Vidéo"
-                if filename.startswith("https://"):
-                    entryType = "Direct"
-                # elif 'Music' in data['categories']:
-                #    entryType = "Musique"
+                if 'entries' in data:
+                    playlist = Playlist()
+                    playlist.buildMetadataYoutube(data)
+                    for i in range(len(data['entries'])):
+                        entryType = "Vidéo"
+                        if filename[i].startswith("https://"):
+                            entryType = "Direct"
+                        fileSize = os.path.getsize(WORKDIR + filename[i])
+                        entry = Entry(applicant, filename[i], entryType, fileSize)
+                        entry.buildMetadataYoutube(data['entries'][i])
+                        playlist.addEntry(entry)
+                        await queue.addEntry(entry)
+                else:
+                    entryType = "Vidéo"
+                    if filename.startswith("https://"):
+                        entryType = "Direct"
+                    # elif 'Music' in data['categories']:
+                    #    entryType = "Musique"
 
-                entry = Entry(applicant, filename, entryType)
-                entry.buildMetadataYoutube(data)
+                    fileSize = os.path.getsize(WORKDIR + filename)
+                    entry = Entry(applicant, filename, entryType, fileSize)
+                    entry.buildMetadataYoutube(data)
 
-            if voiceClient is not None:
-                await voiceClient.move_to(authorVoice.channel)
-                print("voice client not none")
-            else:
-                await authorVoice.channel.connect(timeout=600, reconnect=True)
-                Queues[guild].voice_client = context.voice_client
-                print("voice client none")
-
-            await queue.addEntry(entry)
-
-        pass
+                    return await queue.addEntry(entry)
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
@@ -191,7 +214,7 @@ class Music(commands.Cog):
             color=0x565493
         )
         name = "En cours de lecture"
-        if not voiceClient.is_connected():
+        if not voiceClient.is_playing():
             name = "En pause"
         embed.set_author(name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
         embed.set_image(url=image)
@@ -257,9 +280,9 @@ class Music(commands.Cog):
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].getEntry(index)
             Queues[guild].removeEntry(index)
-            if Queues[guild].cursor <= index:
+            if index <= Queues[guild].cursor:
                 Queues[guild].cursor -= 1
-            if Queues[guild].cursor == index:
+            if index == Queues[guild].cursor:
                 voiceClient.stop()
             if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
                 os.remove(WORKDIR + entry.filename)
@@ -308,7 +331,7 @@ class Music(commands.Cog):
                 if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
                     os.remove(WORKDIR + entry.filename)
             Queues.pop(guild)
-            # voiceClient.stop()
+            voiceClient.stop()
             await voiceClient.disconnect()
             return await context.send('Arrêté')
         else:

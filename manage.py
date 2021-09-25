@@ -31,15 +31,16 @@ class Manage(commands.Cog):
     async def shutdown(self, context):
         authorVoice = context.author.voice
         voiceClient = context.voice_client
-        if voiceClient is not None:
-            await voiceClient.move_to(authorVoice.channel)
-        else:
-            await authorVoice.channel.connect(timeout=600, reconnect=True)
-        if voiceClient.is_playing():
-            voiceClient.stop()
-        player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
-        voiceClient.play(player)
-        await asyncio.sleep(2)
+        if authorVoice is not None:
+            if voiceClient is not None:
+                await voiceClient.move_to(authorVoice.channel)
+            else:
+                await authorVoice.channel.connect(timeout=600, reconnect=True)
+            if voiceClient.is_playing():
+                voiceClient.stop()
+            player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
+            voiceClient.play(player)
+            await asyncio.sleep(2)
         await voiceClient.disconnect()
         await context.send("Adios...")
         for f in os.listdir(WORKDIR):
