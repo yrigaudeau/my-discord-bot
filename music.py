@@ -45,13 +45,13 @@ class Entry():
 class Playlist():
     def __init__(self):
         self.content = []
-        
+
     def addEntry(self, entry):
         self.content.append(entry)
 
     def buildMetadataYoutube(self, data):
         self.title = data['title']
-        self.uploader = data['uploader']
+        self.uploader = data['uploader'] if 'uploader' in data else None
         self.url = 'https://www.youtube.com/playlist?list=' + data['id']
 
 
@@ -88,7 +88,7 @@ class Queue():
     async def addEntry(self, entry):
         self.content.append(entry)
         self.size = self.size + 1
-        await self.text_channel.send("%s a été ajouté à la file d\'attente" % (entry.title))
+        # await self.text_channel.send("%s a été ajouté à la file d\'attente" % (entry.title))
         if self.size == self.cursor + 1:
             await self.startPlayback()
 
@@ -137,50 +137,75 @@ class Music(commands.Cog):
 
             entry = None
 
+            if query.startswith("www."):
+                query = "https://" + query
+                if context.author.id == 289086025442000896:
+                    await context.send("Mael t'abuse à mettre des liens en www, mais j'accepte quand même")
+
             if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
                 # Other streams
                 pass
             else:
                 # YouTube
-                url = query
+                message = await context.send("Recherche de \"%s\" ..." % query)
                 if not query.startswith("https://"):
                     try:
                         result = await Youtube.searchVideos(query)
                     except:
-                        return await context.send('Aucune musique trouvé')
+                        return await message.edit(context='Aucune musique trouvé')
                     url = result["link"]
                     print(url)
+                else:
+                    url = query
 
-                try:
-                    data, filename = await Youtube.downloadAudio(url, self.bot.loop)
-                except:
-                    return await context.send('Le lien n\'est pas valide')
+                # try:
+                data = await Youtube.fetchData(url, self.bot.loop)
+                print(data['webpage_url'])
+                # except:
+                #    return await context.send('Le lien n\'est pas valide')
 
                 applicant = context.author
                 if 'entries' in data:
                     playlist = Playlist()
                     playlist.buildMetadataYoutube(data)
                     for i in range(len(data['entries'])):
-                        entryType = "Vidéo"
-                        if filename[i].startswith("https://"):
-                            entryType = "Direct"
-                        fileSize = os.path.getsize(WORKDIR + filename[i])
-                        entry = Entry(applicant, filename[i], entryType, fileSize)
+                        if data['entries'][i]['is_live'] == True:
+                            filename = data['entries'][i]['url']
+                        else:
+                            await message.edit(content="Téléchargement de %s ... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries'])))
+                            try:
+                                filename = await Youtube.downloadAudio(data['entries'][i]['webpage_url'])
+                            except:
+                                await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
+                                continue
+                            fileSize = os.path.getsize(WORKDIR + filename)
+                        entryType = "Direct" if filename.startswith(
+                            "https://") else "Vidéo"
+                        entry = Entry(applicant, filename, entryType, fileSize)
                         entry.buildMetadataYoutube(data['entries'][i])
                         playlist.addEntry(entry)
                         await queue.addEntry(entry)
+                        await message.edit(content="%s a été ajouté à la file d\'attente" % data['entries'][i]['title'])
                 else:
-                    entryType = "Vidéo"
-                    if filename.startswith("https://"):
-                        entryType = "Direct"
+                    if data['is_live'] == True:
+                        filename = data['url']
+                    else:
+                        await message.edit(content="Téléchargement de %s ..." % data['title'])
+                        try:
+                            filename = await Youtube.downloadAudio(data['webpage_url'])
+                        except:
+                            return await message.edit(content="Erreur lors du téléchargement de %s" % ['title'])
+                        fileSize = os.path.getsize(WORKDIR + filename)
+                    entryType = "Direct" if filename.startswith(
+                        "https://") else "Vidéo"
                     # elif 'Music' in data['categories']:
                     #    entryType = "Musique"
 
-                    fileSize = os.path.getsize(WORKDIR + filename)
                     entry = Entry(applicant, filename, entryType, fileSize)
                     entry.buildMetadataYoutube(data)
 
-                    return await queue.addEntry(entry)
+                    await queue.addEntry(entry)
+                    return await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):

@@ -6,6 +6,7 @@ from config import Config
 
 WORKDIR = Config.conf['workDir']
 
+
 class Manage(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -35,7 +36,7 @@ class Manage(commands.Cog):
             if voiceClient is not None:
                 await voiceClient.move_to(authorVoice.channel)
             else:
-                await authorVoice.channel.connect(timeout=600, reconnect=True)
+                voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
             if voiceClient.is_playing():
                 voiceClient.stop()
             player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
