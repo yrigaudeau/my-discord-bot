@@ -34,15 +34,17 @@ class Youtube():
 
     async def fetchData(url, loop=None):
         loop = loop or asyncio.get_event_loop()
-        data = ytdl.extract_info(url, download=False)
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
         return data
 
-    async def downloadAudio(url, loop=None):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=True))
+    def getFilename(data):
         filename = ytdl.prepare_filename(data)[len(WORKDIR):]
         print(filename)
         return filename
+
+    async def downloadAudio(url, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=True))
 
 
 if __name__ == "__main__":

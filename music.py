@@ -24,6 +24,21 @@ def time_format(seconds):
     return None
 
 
+async def download_progress(filename, message, text, data):
+    # 2.5 to estimate full file size
+    downloadSize = data['formats'][0]['filesize']/1000000*2.5
+    while not os.path.isfile(filename + ".part"):
+        pass
+
+    while os.path.isfile(filename + ".part"):
+        try:
+            currentSize = os.path.getsize(filename + ".part")/1000000
+        except:
+            break
+        await message.edit(content="%s (%.2f/%.2f Mo)" % (text, currentSize, downloadSize))
+        await asyncio.sleep(1)
+
+
 class Entry():
     def __init__(self, applicant, filename, entryType, fileSize):
         self.applicant = applicant
@@ -147,7 +162,7 @@ class Music(commands.Cog):
                 pass
             else:
                 # YouTube
-                message = await context.send("Recherche de \"%s\" ..." % query)
+                message = await context.send("Recherche de \"%s\"..." % query)
                 if not query.startswith("https://"):
                     try:
                         result = await Youtube.searchVideos(query)
@@ -172,9 +187,17 @@ class Music(commands.Cog):
                         if data['entries'][i]['is_live'] == True:
                             filename = data['entries'][i]['url']
                         else:
-                            await message.edit(content="Téléchargement de %s ... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries'])))
                             try:
-                                filename = await Youtube.downloadAudio(data['entries'][i]['webpage_url'])
+                                filename = Youtube.getFilename(
+                                    data['entries'][i])
+                                text = "Téléchargement de %s... (%d/%d)" % (
+                                    data['entries'][i]['title'], i+1, len(data['entries']))
+                                await asyncio.gather(
+                                    Youtube.downloadAudio(
+                                        data['entries'][i]['webpage_url']),
+                                    download_progress(
+                                        WORKDIR + filename, message, text, data['entries'][i])
+                                )
                             except:
                                 await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
                                 continue
@@ -190,11 +213,16 @@ class Music(commands.Cog):
                     if data['is_live'] == True:
                         filename = data['url']
                     else:
-                        await message.edit(content="Téléchargement de %s ..." % data['title'])
                         try:
-                            filename = await Youtube.downloadAudio(data['webpage_url'])
+                            filename = Youtube.getFilename(data)
+                            text = "Téléchargement de %s..." % data['title']
+                            await asyncio.gather(
+                                Youtube.downloadAudio(data['webpage_url']),
+                                download_progress(
+                                    WORKDIR + filename, message, text,  data)
+                            )
                         except:
-                            return await message.edit(content="Erreur lors du téléchargement de %s" % ['title'])
+                            return await message.edit(content="Erreur lors du téléchargement de %s" % data['title'])
                         fileSize = os.path.getsize(WORKDIR + filename)
                     entryType = "Direct" if filename.startswith(
                         "https://") else "Vidéo"
@@ -205,7 +233,7 @@ class Music(commands.Cog):
                     entry.buildMetadataYoutube(data)
 
                     await queue.addEntry(entry)
-                    return await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                    await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
@@ -258,11 +286,11 @@ class Music(commands.Cog):
         list = ""
         for i in range(Queues[guild].size):
             entry = Queues[guild].content[i]
-            indicator = "⠀⠀ "
+            indicator = "⠀⠀   "
             if Queues[guild].cursor == i:
                 indicator = "→⠀"
-            list += "%s%d: %s - %s\n" % (indicator,
-                                         i, entry.title, time_format(entry.duration))
+            list += "%s%d: %s - %s - %0.2fMo\n" % (
+                indicator, i, entry.title, time_format(entry.duration), entry.fileSize/1000000)
 
         embed = discord.Embed(
             description=list,

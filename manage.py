@@ -46,7 +46,7 @@ class Manage(commands.Cog):
         await context.send("Adios...")
         for f in os.listdir(WORKDIR):
             os.remove(WORKDIR + f)
-        exit()
+        exit(0)
 
     @shutdown.error
     async def shutdown_error(self, context, error):

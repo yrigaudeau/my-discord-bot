@@ -21,7 +21,7 @@ pip install -r requirements.txt
     "token": "<your-token>"
 }
 ```
-Put the json above in a config.json file using your favorite text editor (e.g. nano)
+Put the json above in a config.json file in the following location using your favorite text editor (e.g. nano)
 ```bash
 mkdir -p ~/.config/dj-patrick
 nano ~/.config/dj-patrick/config.json

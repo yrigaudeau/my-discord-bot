@@ -16,7 +16,7 @@ class Config():
             f.close()
         else:
             print("Fichier config non trouvé:", CFGFILE)
-            exit()
+            exit(0)
 
     @classmethod
     def getPrefix(self):
