@@ -27,15 +27,19 @@ def time_format(seconds):
 async def download_progress(filename, message, text, data):
     # 2.5 to estimate full file size
     downloadSize = data['formats'][0]['filesize']/1000000*2.5
+    attempts = 0
     while not os.path.isfile(filename + ".part"):
-        pass
+        attempts+=1
+        if attempts == 5:
+            return
+        await asyncio.sleep(1)
 
     while os.path.isfile(filename + ".part"):
         try:
             currentSize = os.path.getsize(filename + ".part")/1000000
         except:
             break
-        await message.edit(content="%s (%.2f/%.2f Mo)" % (text, currentSize, downloadSize))
+        await message.edit(content="%s [%.2f/%.2f Mo]" % (text, currentSize, downloadSize))
         await asyncio.sleep(1)
 
 
