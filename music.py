@@ -86,8 +86,7 @@ class Queue():
 
     async def startPlayback(self):
         entry = self.content[self.cursor]
-        player = discord.FFmpegPCMAudio(
-            WORKDIR + entry.filename, options="-vn")
+        player = discord.FFmpegPCMAudio(WORKDIR + entry.filename, options="-vn")
         self.voice_client.play(player, after=lambda e: self.nextEntry())
         self.starttime = time.time()
 
@@ -98,8 +97,7 @@ class Queue():
         print("next")
         if self.cursor < self.size:
             coro = self.startPlayback()
-            fut = asyncio.run_coroutine_threadsafe(
-                coro, self.voice_client.loop)
+            fut = asyncio.run_coroutine_threadsafe(coro, self.voice_client.loop)
             try:
                 fut.result()
             except:
@@ -167,8 +165,7 @@ class Music(commands.Cog):
                     return await context.send('La recherche Spotify n\'a pas été configurée')
 
                 if query.startswith("https://open.spotify.com/"):
-                    query = query[len("https://open.spotify.com/")
-                                      :].replace('/', ':')
+                    query = query[len("https://open.spotify.com/"):].replace('/', ':')
                 else:
                     query = query[len("spotify:"):]
 
@@ -177,8 +174,7 @@ class Music(commands.Cog):
                     # Spotify link
                     if _type == 'track':
                         track = Spotify.getTrack(_id)
-                        query = "%s %s" % (
-                            track['name'], track['artists'][0]['name'])
+                        query = "%s %s" % (track['name'], track['artists'][0]['name'])
                     elif _type == 'playlist':
                         return await context.send('Fonction non prise en charge pour le moment')
                 except:
@@ -217,20 +213,16 @@ class Music(commands.Cog):
                             try:
                                 filename = Youtube.getFilename(
                                     data['entries'][i])
-                                text = "Téléchargement de %s... (%d/%d)" % (
-                                    data['entries'][i]['title'], i+1, len(data['entries']))
+                                text = "Téléchargement de %s... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries']))
                                 await asyncio.gather(
-                                    Youtube.downloadAudio(
-                                        data['entries'][i]['webpage_url']),
-                                    download_progress(
-                                        WORKDIR + filename, message, text, data['entries'][i])
+                                    Youtube.downloadAudio(data['entries'][i]['webpage_url']),
+                                    download_progress(WORKDIR + filename, message, text, data['entries'][i])
                                 )
                             except:
                                 await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
                                 continue
                             fileSize = os.path.getsize(WORKDIR + filename)
-                        entryType = "Direct" if filename.startswith(
-                            "https://") else "Vidéo"
+                        entryType = "Direct" if filename.startswith("https://") else "Vidéo"
                         entry = Entry(applicant, filename, entryType, fileSize)
                         entry.buildMetadataYoutube(data['entries'][i])
                         playlist.addEntry(entry)
@@ -245,14 +237,12 @@ class Music(commands.Cog):
                             text = "Téléchargement de %s..." % data['title']
                             await asyncio.gather(
                                 Youtube.downloadAudio(data['webpage_url']),
-                                download_progress(
-                                    WORKDIR + filename, message, text,  data)
+                                download_progress(WORKDIR + filename, message, text,  data)
                             )
                         except:
                             return await message.edit(content="Erreur lors du téléchargement de %s" % data['title'])
                         fileSize = os.path.getsize(WORKDIR + filename)
-                    entryType = "Direct" if filename.startswith(
-                        "https://") else "Vidéo"
+                    entryType = "Direct" if filename.startswith("https://") else "Vidéo"
                     # elif 'Music' in data['categories']:
                     #    entryType = "Musique"
 
@@ -313,12 +303,10 @@ class Music(commands.Cog):
                     name = "En pause"
             else:
                 name = "Informations piste"
-            embed.set_author(
-                name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
+            embed.set_author(name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
             embed.set_image(url=image)
             # embed.set_thumbnail(url="https://i.imgur.com/C66eNWB.jpg")
-            embed.set_footer(text="Demandé par %s" %
-                             applicant.display_name, icon_url=applicant.avatar_url_as())
+            embed.set_footer(text="Demandé par %s" % applicant.display_name, icon_url=applicant.avatar_url_as())
 
             return await context.send(embed=embed)
         else:
@@ -347,8 +335,7 @@ class Music(commands.Cog):
             description=list,
             color=0x565493
         )
-        embed.set_author(name="Liste de lecture",
-                         icon_url="https://i.imgur.com/C66eNWB.jpg")
+        embed.set_author(name="Liste de lecture", icon_url="https://i.imgur.com/C66eNWB.jpg")
         embed.set_footer(text="Nombre d'entrées : %d | Durée totale : %s | Taille totale %.2fMo" % (Queues[guild].size, time_format(totalDuration), totalSize/1000000))
 
         return await context.send(embed=embed)

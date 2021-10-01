@@ -48,8 +48,7 @@ class Youtube():
 
 
 if __name__ == "__main__":
-    data = asyncio.run(Youtube.fetchData(
-        "https://www.youtube.com/playlist?list=PLI_rLWXMqpSkAYfar0HRA7lykydwmRY_2"))
+    data = asyncio.run(Youtube.fetchData("https://www.youtube.com/playlist?list=PLI_rLWXMqpSkAYfar0HRA7lykydwmRY_2"))
     #data, filename = asyncio.run(Youtube.downloadAudio("https://www.youtube.com/watch?v=WnqOhgI_8wA?list="))
     f = open('ex.json', 'w')
     f.write(str(data))

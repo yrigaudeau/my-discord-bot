@@ -65,11 +65,16 @@ class Help(commands.Cog):
             color=0x565493
         )
         embed.set_author(
-            name="Aide", icon_url="https://i.imgur.com/C66eNWB.jpg")
+            name="Aide", 
+            icon_url="https://i.imgur.com/C66eNWB.jpg"
+        )
 
         if command in commandsList['usage']:
-            embed.add_field(name="Utilisation", value="%s%s %s" % (
-                PREFIX, command, commandsList['usage'][category][command]), inline=False)
+            embed.add_field(
+                name="Utilisation", 
+                value="%s%s %s" % (PREFIX, command, commandsList['usage'][category][command]), 
+                inline=False
+            )
 
         return embed
 
@@ -82,26 +87,42 @@ class Help(commands.Cog):
 
         if query is None:
             for category in categories['description']:
-                embed.set_author(name="Aide de %s" % (
-                    self.bot.user.display_name), icon_url="https://i.imgur.com/C66eNWB.jpg")
+                embed.set_author(
+                    name="Aide de %s" % (self.bot.user.display_name), 
+                    icon_url="https://i.imgur.com/C66eNWB.jpg"
+                )
                 embed.title = 'Liste des catégories de commandes'
-                embed.add_field(name=categories['displayName'][category], value="-> %shelp %s\n%s" % (
-                    PREFIX, category, categories['description'][category]), inline=False)
+                embed.add_field(
+                    name=categories['displayName'][category],
+                    value="-> %shelp %s\n%s" % (PREFIX, category, categories['description'][category]),
+                    inline=False
+                )
         else:
             if query in categories['description']:
                 category = query
-                embed.set_author(name="Aide de %s" % (
-                    categories['displayName'][category]), icon_url="https://i.imgur.com/C66eNWB.jpg")
+                embed.set_author(
+                    name="Aide de %s" % (categories['displayName'][category]), 
+                    icon_url="https://i.imgur.com/C66eNWB.jpg"
+                )
                 embed.title = 'Liste des commandes de %s' % categories['displayName'][category]
                 for command in commandsList['description'][category]:
                     if command in commandsList['usage'][category]:
                         embed.add_field(
-                            name=PREFIX+command, value=commandsList['description'][category][command], inline=True)
-                        embed.add_field(name="Utilisation", value="%s%s %s" % (
-                            PREFIX, command, commandsList['usage'][category][command]), inline=True)
+                            name=PREFIX+command, 
+                            value=commandsList['description'][category][command], 
+                            inline=True
+                        )
+                        embed.add_field(
+                            name="Utilisation", 
+                            value="%s%s %s" % (PREFIX, command, commandsList['usage'][category][command]), 
+                            inline=True
+                        )
                     else:
                         embed.add_field(
-                            name=PREFIX+command, value=commandsList['description'][category][command], inline=False)
+                            name=PREFIX+command, 
+                            value=commandsList['description'][category][command], 
+                            inline=False
+                        )
             else:
                 return await context.send("La catégorie %s n'existe pas\n%shelp pour obtenir de l'aide" % (query, PREFIX))
 

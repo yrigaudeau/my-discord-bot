@@ -5,16 +5,13 @@ from config import Config
 if Config.spotifyEnabled:
     SPOTIPY_CLIENT_ID = Config.conf['spotify-client-id']
     SPOTIPY_CLIENT_SECRET = Config.conf['spotify-client-secret']
+    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET))
+
 
 class Spotify():
-    def getSpotipy():
-        auth_manager = SpotifyClientCredentials(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET)
-        return spotipy.Spotify(auth_manager=auth_manager)
-
-    @classmethod
-    def getTrack(self, url):
+    def getTrack(url):
         try:
-            return self.getSpotipy().track(url)
+            return sp.track(url)
         except:
             return None
 
