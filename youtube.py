@@ -3,7 +3,7 @@ import youtube_dl
 import asyncio
 
 from config import Config
-WORKDIR = Config.conf['workDir']
+WORKDIR = Config.conf['workdir']
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -45,7 +45,6 @@ class Youtube():
     async def downloadAudio(url, loop=None):
         loop = loop or asyncio.get_event_loop()
         await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=True))
-        return
 
 
 if __name__ == "__main__":

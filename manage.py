@@ -4,7 +4,7 @@ import asyncio
 from discord.ext import commands
 from config import Config
 
-WORKDIR = Config.conf['workDir']
+WORKDIR = Config.conf['workdir']
 
 
 class Manage(commands.Cog):

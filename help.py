@@ -5,11 +5,13 @@ from config import Config
 categories = {
     'description': {
         'music': 'Contient les commandes liées à l\'écoute musicale',
-        'manage': 'Contient les commandes de gestion du bot\nAccessible à tous les utilisateurs disposant de la permission "Gérer les messages"'
+        'manage': 'Contient les commandes de gestion du bot\nAccessible à tous les utilisateurs disposant de la permission "Gérer les messages"',
+        'fun': 'Contient les commandes liées à l\'amusement'
     },
     'displayName': {
         'music': 'Musique',
-        'manage': 'Gestion'
+        'manage': 'Gestion',
+        'fun': 'Fun'
     }
 }
 
@@ -18,6 +20,7 @@ commandsList = {
         'music': {
             'play': 'Permet de lire un son insane depuis Youtube ou un lien direct',
             'nowplaying': 'Permet de connaître le son en lecture et son avancement',
+            'info': 'Affiche les informations sur une musique de la liste d\'attente',
             'queue': 'Affiche la liste d\'attente',
             'move': 'Permet de déplacer une musique dans la liste d\'attente',
             'skip': 'Passe la musique actuelle',
@@ -29,11 +32,15 @@ commandsList = {
         'manage': {
             'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)',
             'shutdown': 'Eteindre le bot'
+        },
+        'fun': {
+            'ah': 'quel plaisir'
         }
     },
     'usage': {
         'music': {
             'play': '<lien Youtube / lien http / recherche Youtube>',
+            'info': '<position>',
             'move': '<position actuelle> <nouvelle position>',
             'remove': '<position>'
         },

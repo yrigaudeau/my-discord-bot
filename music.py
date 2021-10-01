@@ -3,11 +3,12 @@ import os
 import discord
 from discord.ext import commands
 from youtube import Youtube
+from spotify import Spotify
 from help import Help
 from config import Config
 import time
 
-WORKDIR = Config.conf['workDir']
+WORKDIR = Config.conf['workdir']
 Queues = {}
 
 
@@ -29,7 +30,7 @@ async def download_progress(filename, message, text, data):
     downloadSize = data['formats'][0]['filesize']/1000000*2.5
     attempts = 0
     while not os.path.isfile(filename + ".part"):
-        attempts+=1
+        attempts += 1
         if attempts == 5:
             return
         await asyncio.sleep(1)
@@ -134,7 +135,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['p', 'lire', 'jouer'])
     async def play(self, context, *, query: str = None):
         if query is None:
-            return await context.send(embed=Help.get(context, 'play'))
+            return await context.send(embed=Help.get(context, 'music', 'play'))
 
         authorVoice = context.author.voice
         voiceClient = context.voice_client
@@ -161,11 +162,33 @@ class Music(commands.Cog):
                 if context.author.id == 289086025442000896:
                     await context.send("Mael t'abuse à mettre des liens en www, mais j'accepte quand même")
 
+            if query.startswith(("spotify:", "https://open.spotify.com/")):
+                if not Config.spotifyEnabled:
+                    return await context.send('La recherche Spotify n\'a pas été configurée')
+
+                if query.startswith("https://open.spotify.com/"):
+                    query = query[len("https://open.spotify.com/")
+                                      :].replace('/', ':')
+                else:
+                    query = query[len("spotify:"):]
+
+                try:
+                    [_type, _id] = query.split(':')
+                    # Spotify link
+                    if _type == 'track':
+                        track = Spotify.getTrack(_id)
+                        query = "%s %s" % (
+                            track['name'], track['artists'][0]['name'])
+                    elif _type == 'playlist':
+                        return await context.send('Fonction non prise en charge pour le moment')
+                except:
+                    return await context.send('Le lien n\'est pas valide')
+
             if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
                 # Other streams
                 pass
             else:
-                # YouTube
+                # Search YouTube
                 message = await context.send("Recherche de \"%s\"..." % query)
                 if not query.startswith("https://"):
                     try:
@@ -177,11 +200,11 @@ class Music(commands.Cog):
                 else:
                     url = query
 
-                # try:
-                data = await Youtube.fetchData(url, self.bot.loop)
-                print(data['webpage_url'])
-                # except:
-                #    return await context.send('Le lien n\'est pas valide')
+                try:
+                    data = await Youtube.fetchData(url, self.bot.loop)
+                    print(data['webpage_url'])
+                except:
+                    return await context.send('Le lien n\'est pas valide')
 
                 applicant = context.author
                 if 'entries' in data:
@@ -242,44 +265,64 @@ class Music(commands.Cog):
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
         guild = context.guild.id
-        voiceClient = context.voice_client
         if guild not in Queues or Queues[guild].cursor == Queues[guild].size:
             return await context.send('Rien en lecture')
+        else:
+            await self.info(context, Queues[guild].cursor)
 
-        entry = Queues[guild].content[Queues[guild].cursor]
-        title = entry.title
-        artist = entry.artist
-        album = entry.album
-        url = entry.url
-        entryType = entry.entryType
-        image = entry.thumbnail
-        applicant = entry.applicant
+    @commands.command(aliases=['i'])
+    async def info(self, context, index: int = None):
+        guild = context.guild.id
+        voiceClient = context.voice_client
+        if guild not in Queues:
+            return await context.send('Aucune liste d\'attente')
 
-        current = time_format(int(time.time() - Queues[guild].starttime))
-        duration = time_format(entry.duration)
+        if index is None:
+            return await context.send(embed=Help.get(context, 'music', 'info'))
 
-        content = "Chaîne : %s\n" % (artist)
-        content += "Progression : %s / %s\n" % (current, duration)
-        if album is not None:
-            content += "Album : %s\n" % (album)
-        content += "Type : %s" % (entryType)
+        if index < Queues[guild].size and index >= 0:
+            entry = Queues[guild].content[index]
+            title = entry.title
+            artist = entry.artist
+            album = entry.album
+            url = entry.url
+            entryType = entry.entryType
+            image = entry.thumbnail
+            applicant = entry.applicant
 
-        embed = discord.Embed(
-            title=title,
-            url=url,
-            description=content,
-            color=0x565493
-        )
-        name = "En cours de lecture"
-        if not voiceClient.is_playing():
-            name = "En pause"
-        embed.set_author(name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
-        embed.set_image(url=image)
-        # embed.set_thumbnail(url="https://i.imgur.com/C66eNWB.jpg")
-        embed.set_footer(text="Demandé par %s" %
-                         applicant.display_name, icon_url=applicant.avatar_url_as())
+            current = time_format(int(time.time() - Queues[guild].starttime))
+            duration = time_format(entry.duration)
 
-        return await context.send(embed=embed)
+            content = "Chaîne : %s\n" % (artist)
+            if Queues[guild].cursor == index:
+                content += "Progression : %s / %s\n" % (current, duration)
+            if album is not None:
+                content += "Album : %s\n" % (album)
+            content += "Type : %s\n" % (entryType)
+            content += "Position : %d" % index
+
+            embed = discord.Embed(
+                title=title,
+                url=url,
+                description=content,
+                color=0x565493
+            )
+            if Queues[guild].cursor == index:
+                name = "En cours de lecture"
+                if not voiceClient.is_playing():
+                    name = "En pause"
+            else:
+                name = "Informations piste"
+            embed.set_author(
+                name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
+            embed.set_image(url=image)
+            # embed.set_thumbnail(url="https://i.imgur.com/C66eNWB.jpg")
+            embed.set_footer(text="Demandé par %s" %
+                             applicant.display_name, icon_url=applicant.avatar_url_as())
+
+            return await context.send(embed=embed)
+        else:
+            return await context.send('L\'index %d n\'existe pas' % (index))
 
     @commands.command(aliases=['q', 'file'])
     async def queue(self, context):
@@ -287,13 +330,17 @@ class Music(commands.Cog):
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
 
+        totalDuration = 0
+        totalSize = 0
         list = ""
         for i in range(Queues[guild].size):
             entry = Queues[guild].content[i]
+            totalDuration += entry.duration
+            totalSize += entry.fileSize
             indicator = "⠀⠀   "
             if Queues[guild].cursor == i:
                 indicator = "→⠀"
-            list += "%s%d: %s - %s - %0.2fMo\n" % (
+            list += "%s%d: %s - %s - %.2fMo\n" % (
                 indicator, i, entry.title, time_format(entry.duration), entry.fileSize/1000000)
 
         embed = discord.Embed(
@@ -302,6 +349,7 @@ class Music(commands.Cog):
         )
         embed.set_author(name="Liste de lecture",
                          icon_url="https://i.imgur.com/C66eNWB.jpg")
+        embed.set_footer(text="Nombre d'entrées : %d | Durée totale : %s | Taille totale %.2fMo" % (Queues[guild].size, time_format(totalDuration), totalSize/1000000))
 
         return await context.send(embed=embed)
 
@@ -312,7 +360,7 @@ class Music(commands.Cog):
             return await context.send('Aucune liste d\'attente')
 
         if frm is None or to is None:
-            return await context.send(embed=Help.get(context, 'move'))
+            return await context.send(embed=Help.get(context, 'music' 'move'))
 
         if frm == to:
             return await context.send('La destination ne peut pas être égale à la source')
@@ -332,7 +380,7 @@ class Music(commands.Cog):
             return await context.send('Aucune liste d\'attente')
 
         if index is None:
-            return await context.send(embed=Help.get(context, 'remove'))
+            return await context.send(embed=Help.get(context, 'music', 'remove'))
 
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].getEntry(index)

@@ -7,6 +7,7 @@ CFGFILE = CFGFOLDER + "config.json"
 class Config():
     def __init__(self):
         self.conf = None
+        self.spotifyEnabled = False
 
     @classmethod
     def readConfig(self):
@@ -14,6 +15,8 @@ class Config():
             f = open(CFGFILE, 'r')
             self.conf = json.load(f)
             f.close()
+            if 'spotify-client-id' in self.conf and 'spotify-client-secret' in self.conf:
+                self.spotifyEnabled = True
         else:
             print("Fichier config non trouvé:", CFGFILE)
             exit(0)
