@@ -38,7 +38,7 @@ You can create a spotify application by going [here](https://developer.spotify.c
 ```json
 {
     "prefix": "$",
-    "workdir": "downloads/",
+    "workdir": "/var/lib/dj-patrick/downloads/",
     "discord-token": "<token>",
     "spotify-client-id": "<id>",
     "spotify-client-secret": "<secret>"
