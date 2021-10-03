@@ -1,7 +1,7 @@
 import os
 import json
 
-CFGFOLDER = os.path.expanduser('~') + "/.config/dj-patrick/"
+CFGFOLDER = "./"
 CFGFILE = CFGFOLDER + "config.json"
 
 class Config():

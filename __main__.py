@@ -18,6 +18,8 @@ if __name__ == "__main__":
             os.remove(WORKDIR + f)
     else:
         os.mkdir(WORKDIR)
+    print(os.system("pwd"))
+    os.system("touch jesuisla")
 
     bot = commands.Bot(command_prefix=lambda e, f: Config.getPrefix(), help_command=None)
 
