@@ -4,8 +4,8 @@ After=network-online.target
 
 [Service]
 Type=simple
-User=<user>
-Group=<group>
+User=dj-patrick
+Group=dj-patrick
 Restart=on-failure
 ExecStart=/usr/bin/python3 /opt/dj-patrick
 

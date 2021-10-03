@@ -23,7 +23,7 @@ You can create a discord application by going here https://discord.com/developer
 ```json
 {
     "prefix": "$",
-    "workdir": "downloads/",
+    "workdir": "/var/lib/dj-patrick/downloads/",
     "discord-token": "<token>"
 }
 ```
@@ -34,7 +34,7 @@ sudo -u dj-patrick nano /var/lib/dj-patrick/config.json
 
 If you want to enable adding music from spotify , add the following lines to the config.json to make it look like that  
 
-You can create a spotify application by going here https://developer.spotify.com/dashboard/applications
+You can create a spotify application by going [here](https://developer.spotify.com/dashboard/applications){:target="_blank"}
 ```json
 {
     "prefix": "$",
@@ -51,12 +51,6 @@ sudo -u dj-patrick python3 .
 ```
 
 ## Install as service
-Edit the dj-patrick.service file by replacing \<user> and \<group> by dj-patrick (or the username you chose)
-```md
-User=<user>
-Group=<group>
-```
-And then install the service
 ```bash
 sudo cp dj-patrick.service /etc/systemd/system
 sudo cp -r ../my-discord-bot /opt/dj-patrick
