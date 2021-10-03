@@ -5,10 +5,10 @@ from discord.ext import commands
 from youtube import Youtube
 from spotify import Spotify
 from help import Help
-from config import Config
+from config import Config, DLDIR
 import time
 
-WORKDIR = Config.conf['workdir']
+
 Queues = {}
 
 
@@ -86,7 +86,7 @@ class Queue():
 
     async def startPlayback(self):
         entry = self.content[self.cursor]
-        player = discord.FFmpegPCMAudio(WORKDIR + entry.filename, options="-vn")
+        player = discord.FFmpegPCMAudio(DLDIR + entry.filename, options="-vn")
         self.voice_client.play(player, after=lambda e: self.nextEntry())
         self.starttime = time.time()
 
@@ -216,12 +216,12 @@ class Music(commands.Cog):
                                 text = "Téléchargement de %s... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries']))
                                 await asyncio.gather(
                                     Youtube.downloadAudio(data['entries'][i]['webpage_url']),
-                                    download_progress(WORKDIR + filename, message, text, data['entries'][i])
+                                    download_progress(DLDIR + filename, message, text, data['entries'][i])
                                 )
                             except:
                                 await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
                                 continue
-                            fileSize = os.path.getsize(WORKDIR + filename)
+                            fileSize = os.path.getsize(DLDIR + filename)
                         entryType = "Direct" if filename.startswith("https://") else "Vidéo"
                         entry = Entry(applicant, filename, entryType, fileSize)
                         entry.buildMetadataYoutube(data['entries'][i])
@@ -237,11 +237,11 @@ class Music(commands.Cog):
                             text = "Téléchargement de %s..." % data['title']
                             await asyncio.gather(
                                 Youtube.downloadAudio(data['webpage_url']),
-                                download_progress(WORKDIR + filename, message, text,  data)
+                                download_progress(DLDIR + filename, message, text,  data)
                             )
                         except:
                             return await message.edit(content="Erreur lors du téléchargement de %s" % data['title'])
-                        fileSize = os.path.getsize(WORKDIR + filename)
+                        fileSize = os.path.getsize(DLDIR + filename)
                     entryType = "Direct" if filename.startswith("https://") else "Vidéo"
                     # elif 'Music' in data['categories']:
                     #    entryType = "Musique"
@@ -376,8 +376,8 @@ class Music(commands.Cog):
                 Queues[guild].cursor -= 1
             if index == Queues[guild].cursor:
                 voiceClient.stop()
-            if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
-                os.remove(WORKDIR + entry.filename)
+            if entry.entryType != "live" and entry.filename in os.listdir(DLDIR):
+                os.remove(DLDIR + entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
         else:
             return await context.send('L\'index %d n\'existe pas' % (index))
@@ -420,8 +420,8 @@ class Music(commands.Cog):
         guild = context.guild.id
         if voiceClient is not None:
             for entry in Queues[guild].content:
-                if entry.entryType != "live" and entry.filename in os.listdir(WORKDIR):
-                    os.remove(WORKDIR + entry.filename)
+                if entry.entryType != "live" and entry.filename in os.listdir(DLDIR):
+                    os.remove(DLDIR + entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
             await voiceClient.disconnect()

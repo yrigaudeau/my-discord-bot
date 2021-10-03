@@ -2,9 +2,7 @@ import os
 import discord
 import asyncio
 from discord.ext import commands
-from config import Config
-
-WORKDIR = Config.conf['workdir']
+from config import Config, DLDIR
 
 
 class Manage(commands.Cog):
@@ -44,8 +42,8 @@ class Manage(commands.Cog):
             await asyncio.sleep(2)
         await voiceClient.disconnect()
         await context.send("Adios...")
-        for f in os.listdir(WORKDIR):
-            os.remove(WORKDIR + f)
+        for f in os.listdir(DLDIR):
+            os.remove(DLDIR + f)
         exit(0)
 
     @shutdown.error

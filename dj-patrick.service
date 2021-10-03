@@ -4,9 +4,12 @@ After=network-online.target
 
 [Service]
 Type=simple
+Restart=on-failure
+
 User=dj-patrick
 Group=dj-patrick
-Restart=on-failure
+
+WorkingDirectory=/var/lib/dj-patrick
 ExecStart=/usr/bin/python3 /opt/dj-patrick
 
 [Install]

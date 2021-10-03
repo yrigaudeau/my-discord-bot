@@ -23,7 +23,6 @@ You can create a discord application by going here https://discord.com/developer
 ```json
 {
     "prefix": "$",
-    "workdir": "/var/lib/dj-patrick/downloads/",
     "discord-token": "<token>"
 }
 ```
@@ -32,13 +31,12 @@ Put the json above in a config.json file in the following location using your fa
 sudo -u dj-patrick nano /var/lib/dj-patrick/config.json
 ```
 
-If you want to enable adding music from spotify , add the following lines to the config.json to make it look like that  
+If you want to enable adding music from spotify, add the following lines to the config.json to make it look like that  
 
-You can create a spotify application by going [here](https://developer.spotify.com/dashboard/applications){:target="_blank"}
+You can create a spotify application by going here https://developer.spotify.com/dashboard/applications
 ```json
 {
     "prefix": "$",
-    "workdir": "/var/lib/dj-patrick/downloads/",
     "discord-token": "<token>",
     "spotify-client-id": "<id>",
     "spotify-client-secret": "<secret>"

@@ -1,16 +1,14 @@
 from youtubesearchpython.__future__ import VideosSearch
 import youtube_dl
 import asyncio
-
-from config import Config
-WORKDIR = Config.conf['workdir']
+from config import DLDIR
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'outtmpl': WORKDIR + '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'outtmpl': DLDIR + '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -38,7 +36,7 @@ class Youtube():
         return data
 
     def getFilename(data):
-        filename = ytdl.prepare_filename(data)[len(WORKDIR):]
+        filename = ytdl.prepare_filename(data)[len(DLDIR):]
         print(filename)
         return filename
 
