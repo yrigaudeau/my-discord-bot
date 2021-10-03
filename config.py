@@ -1,7 +1,7 @@
 import os
 import json
 
-CFGFOLDER = "./"
+CFGFOLDER = "/var/lib/dj-patrick/"
 CFGFILE = CFGFOLDER + "config.json"
 
 class Config():
