@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     @bot.event
     async def on_message(message):
-        if message.author.id == bot.user.id:
+        if message.author.id == bot.user.id or message.author.bot is True:
             return
 
         await Fun.chocolatine(message)

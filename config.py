@@ -5,11 +5,6 @@ CFGFILE = "config.json"
 DLDIR = "downloads/"
 
 class Config():
-    def __init__(self):
-        self.conf = None
-        self.spotifyEnabled = False
-        self.token = ""
-
     @classmethod
     def readConfig(self):
         if os.path.isfile(CFGFILE):
@@ -18,6 +13,8 @@ class Config():
             f.close()
             if 'spotify-client-id' in self.conf and 'spotify-client-secret' in self.conf:
                 self.spotifyEnabled = True
+            else:
+                self.spotifyEnabled = False
             self.token = self.conf['discord-token']
         else:
             print("Fichier config non trouvé ou non valide:", CFGFILE)

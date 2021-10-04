@@ -4,3 +4,4 @@ __pycache__
 .*
 *.webm
 *.m4a
+config.json
