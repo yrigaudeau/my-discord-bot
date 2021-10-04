@@ -35,9 +35,10 @@ class Manage(commands.Cog):
                 await voiceClient.move_to(authorVoice.channel)
             else:
                 voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
+        if voiceClient is not None:
             if voiceClient.is_playing():
                 voiceClient.stop()
-            player = discord.FFmpegPCMAudio("shutdown.webm", options="-vn")
+            player = discord.FFmpegPCMAudio(os.path.dirname(os.path.realpath(__file__)) + "/shutdown.webm", options="-vn")
             voiceClient.play(player)
             await asyncio.sleep(2)
         await voiceClient.disconnect()

@@ -45,11 +45,12 @@ async def download_progress(filename, message, text, data):
 
 
 class Entry():
-    def __init__(self, applicant, filename, entryType, fileSize):
+    def __init__(self, applicant, filename, entryType, fileSize, playlist=None):
         self.applicant = applicant
         self.filename = filename
         self.entryType = entryType
         self.fileSize = fileSize
+        self.playlist = playlist
 
     def buildMetadataYoutube(self, data):
         #self.title = data['track'] if 'track' in data else data['title']
@@ -63,12 +64,6 @@ class Entry():
 
 
 class Playlist():
-    def __init__(self):
-        self.content = []
-
-    def addEntry(self, entry):
-        self.content.append(entry)
-
     def buildMetadataYoutube(self, data):
         self.title = data['title']
         self.uploader = data['uploader'] if 'uploader' in data else None
@@ -147,111 +142,105 @@ class Music(commands.Cog):
             voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
             print("voice client none")
 
-        # async with context.typing():
-        if True:
-            guild = context.guild.id
-            if guild not in Queues:
-                Queues[guild] = Queue(voiceClient, context.channel)
-            queue = Queues[guild]
+        guild = context.guild.id
+        if guild not in Queues:
+            Queues[guild] = Queue(voiceClient, context.channel)
 
-            entry = None
+        queue = Queues[guild]
+        entry = None
 
-            if query.startswith("www."):
-                query = "https://" + query
-                if context.author.id == 289086025442000896:
-                    await context.send("Mael t'abuse à mettre des liens en www, mais j'accepte quand même")
+        if query.startswith("www."):
+            query = "https://" + query
+            if context.author.id == 289086025442000896:
+                await context.send("Mael t'abuse à mettre des liens en www, mais j'accepte quand même")
 
-            if query.startswith(("spotify:", "https://open.spotify.com/")):
-                if not Config.spotifyEnabled:
-                    return await context.send('La recherche Spotify n\'a pas été configurée')
-
-                if query.startswith("https://open.spotify.com/"):
-                    query = query[len("https://open.spotify.com/"):].replace('/', ':')
-                else:
-                    query = query[len("spotify:"):]
-
-                try:
-                    [_type, _id] = query.split(':')
-                    # Spotify link
-                    if _type == 'track':
-                        track = Spotify.getTrack(_id)
-                        query = "%s %s" % (track['name'], track['artists'][0]['name'])
-                    elif _type == 'playlist':
-                        return await context.send('Fonction non prise en charge pour le moment')
-                except:
-                    return await context.send('Le lien n\'est pas valide')
-
-            if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
-                # Other streams
-                pass
+        if query.startswith(("spotify:", "https://open.spotify.com/")):
+            if not Config.spotifyEnabled:
+                return await context.send('La recherche Spotify n\'a pas été configurée')
+            if query.startswith("https://open.spotify.com/"):
+                query = query[len("https://open.spotify.com/"):].replace('/', ':')
             else:
-                # Search YouTube
+                query = query[len("spotify:"):]
+
+            try:
+                [_type, _id] = query.split(':')
+                # Spotify link
+                if _type == 'track':
+                    track = Spotify.getTrack(_id)
+                    query = "%s %s" % (track['name'], track['artists'][0]['name'])
+                elif _type == 'playlist':
+                    return await context.send('Fonction non prise en charge pour le moment')
+            except:
+                return await context.send('Le lien n\'est pas valide')
+
+        if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
+            # Other streams
+            pass
+        else:
+            # Search YouTube
+            if not query.startswith("https://"):
                 message = await context.send("Recherche de \"%s\"..." % query)
-                if not query.startswith("https://"):
-                    try:
-                        result = await Youtube.searchVideos(query)
-                    except:
-                        return await message.edit(context='Aucune musique trouvé')
-                    url = result["link"]
-                    print(url)
-                else:
-                    url = query
-
                 try:
-                    data = await Youtube.fetchData(url, self.bot.loop)
-                    print(data['webpage_url'])
+                    result = await Youtube.searchVideos(query)
                 except:
-                    return await context.send('Le lien n\'est pas valide')
+                    return await message.edit(context='Aucune musique trouvé')
+                url = result["link"]
+                print(url)
+            else:
+                message = await context.send("Investigation sur \"%s\"..." % query[8:])
+                url = query
 
-                applicant = context.author
-                if 'entries' in data:
-                    playlist = Playlist()
-                    playlist.buildMetadataYoutube(data)
-                    for i in range(len(data['entries'])):
-                        if data['entries'][i]['is_live'] == True:
-                            filename = data['entries'][i]['url']
-                        else:
-                            try:
-                                filename = Youtube.getFilename(
-                                    data['entries'][i])
-                                text = "Téléchargement de %s... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries']))
-                                await asyncio.gather(
-                                    Youtube.downloadAudio(data['entries'][i]['webpage_url']),
-                                    download_progress(DLDIR + filename, message, text, data['entries'][i])
-                                )
-                            except:
-                                await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
-                                continue
-                            fileSize = os.path.getsize(DLDIR + filename)
-                        entryType = "Direct" if filename.startswith("https://") else "Vidéo"
-                        entry = Entry(applicant, filename, entryType, fileSize)
-                        entry.buildMetadataYoutube(data['entries'][i])
-                        playlist.addEntry(entry)
-                        await queue.addEntry(entry)
-                        await message.edit(content="%s a été ajouté à la file d\'attente" % data['entries'][i]['title'])
-                else:
-                    if data['is_live'] == True:
-                        filename = data['url']
+            try:
+                data = await Youtube.fetchData(url, self.bot.loop)
+                print(data['webpage_url'])
+            except:
+                return await context.send('Le lien n\'est pas valide')
+
+            applicant = context.author
+            if 'entries' in data:
+                playlist = Playlist()
+                playlist.buildMetadataYoutube(data)
+                for i in range(len(data['entries'])):
+                    if data['entries'][i]['is_live'] == True:
+                        filename = data['entries'][i]['url']
                     else:
                         try:
-                            filename = Youtube.getFilename(data)
-                            text = "Téléchargement de %s..." % data['title']
+                            filename = Youtube.getFilename(data['entries'][i])
+                            text = "Téléchargement de %s... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries']))
                             await asyncio.gather(
-                                Youtube.downloadAudio(data['webpage_url']),
-                                download_progress(DLDIR + filename, message, text,  data)
+                                Youtube.downloadAudio(data['entries'][i]['webpage_url']),
+                                download_progress(DLDIR + filename, message, text, data['entries'][i])
                             )
                         except:
-                            return await message.edit(content="Erreur lors du téléchargement de %s" % data['title'])
+                            await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
+                            continue
                         fileSize = os.path.getsize(DLDIR + filename)
                     entryType = "Direct" if filename.startswith("https://") else "Vidéo"
-                    # elif 'Music' in data['categories']:
-                    #    entryType = "Musique"
-
-                    entry = Entry(applicant, filename, entryType, fileSize)
-                    entry.buildMetadataYoutube(data)
-
+                    entry = Entry(applicant, filename, entryType, fileSize, playlist)
+                    entry.buildMetadataYoutube(data['entries'][i])
                     await queue.addEntry(entry)
-                    await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                    await message.edit(content="%s a été ajouté à la file d\'attente" % data['entries'][i]['title'])
+            else:
+                if data['is_live'] == True:
+                    filename = data['url']
+                else:
+                    try:
+                        filename = Youtube.getFilename(data)
+                        text = "Téléchargement de %s..." % data['title']
+                        await asyncio.gather(
+                            Youtube.downloadAudio(data['webpage_url']),
+                            download_progress(DLDIR + filename, message, text,  data)
+                        )
+                    except:
+                        return await message.edit(content="Erreur lors du téléchargement de %s" % data['title'])
+                    fileSize = os.path.getsize(DLDIR + filename)
+                entryType = "Direct" if filename.startswith("https://") else "Vidéo"
+                # elif 'Music' in data['categories']:
+                #    entryType = "Musique"
+                entry = Entry(applicant, filename, entryType, fileSize)
+                entry.buildMetadataYoutube(data)
+                await queue.addEntry(entry)
+                await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
@@ -321,16 +310,24 @@ class Music(commands.Cog):
 
         totalDuration = 0
         totalSize = 0
+        current_playlist = ""
         list = ""
         for i in range(Queues[guild].size):
             entry = Queues[guild].content[i]
+            if entry.playlist is not None:
+                tab = "⠀⠀⠀⠀"
+                if entry.playlist.title != current_playlist:
+                    current_playlist = entry.playlist.title
+                    list += "⠀⠀ Playlist : %s\n" % entry.playlist.title
+            else:
+                tab = ""
             totalDuration += entry.duration
             totalSize += entry.fileSize
-            indicator = "⠀⠀   "
+            indicator = "⠀⠀ "
             if Queues[guild].cursor == i:
                 indicator = "→⠀"
-            list += "%s%d: %s - %s - %.2fMo\n" % (
-                indicator, i, entry.title, time_format(entry.duration), entry.fileSize/1000000)
+
+            list += "%s%s%d: %s - %s - %.2fMo\n" % (tab, indicator, i, entry.title, time_format(entry.duration), entry.fileSize/1000000)
 
         embed = discord.Embed(
             description=list,
