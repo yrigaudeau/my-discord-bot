@@ -147,7 +147,8 @@ class Music(commands.Cog):
             voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
             print("voice client none")
 
-        async with context.typing():
+        # async with context.typing():
+        if True:
             guild = context.guild.id
             if guild not in Queues:
                 Queues[guild] = Queue(voiceClient, context.channel)
