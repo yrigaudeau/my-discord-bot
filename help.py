@@ -27,7 +27,8 @@ commandsList = {
             'remove': 'Supprime une musique de la liste d\'attente',
             'pause': 'Met en pause la lecture',
             'resume': 'Reprend la lecture',
-            'stop': 'Arrete la lecture et vide la liste d\'attente'
+            'stop': 'Arrete la lecture et vide la liste d\'attente',
+            'repeat': 'Change le mode de répétition'
         },
         'manage': {
             'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)',
@@ -42,7 +43,8 @@ commandsList = {
             'play': '<lien Youtube / lien http / recherche Youtube>',
             'info': '<position>',
             'move': '<position actuelle> <nouvelle position>',
-            'remove': '<position>'
+            'remove': '<position>',
+            'repeat': '<mode>\nExemples : none, entry, all, playlist'
         },
         'manage': {
             'set-prefix': '"nouveau préfixe"'

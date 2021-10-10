@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import discord
 from discord.ext import commands
 from youtube import Youtube
@@ -7,7 +8,6 @@ from spotify import Spotify
 from help import Help
 from config import Config, DLDIR
 import time
-
 
 Queues = {}
 
@@ -71,24 +71,38 @@ class Playlist():
 
 
 class Queue():
-    def __init__(self, voice_client, text_channel):
+    def __init__(self, voice_client, text_channel, repeat_mode="none"):
         self.content = []
         self.size = 0
         self.cursor = 0
         self.starttime = 0
         self.voice_client = voice_client
         self.text_channel = text_channel
+        self.repeat_mode = repeat_mode  # none, entry, playlist, all
 
     async def startPlayback(self):
         entry = self.content[self.cursor]
-        player = discord.FFmpegPCMAudio(DLDIR + entry.filename, options="-vn")
+        filename = DLDIR + entry.filename if entry.entryType != "Direct" else entry.filename
+        player = discord.FFmpegPCMAudio(filename, options="-vn")
         self.voice_client.play(player, after=lambda e: self.nextEntry())
         self.starttime = time.time()
 
         await self.text_channel.send('En lecture : %s' % (entry.title))
 
     def nextEntry(self):
-        self.cursor = self.cursor + 1
+        if self.repeat_mode == "none":
+            self.cursor = self.cursor + 1
+        elif self.repeat_mode == "entry":
+            pass
+        elif self.repeat_mode == "all":
+            if self.cursor == self.size - 1:
+                self.cursor = 0
+            else:
+                self.cursor = self.cursor + 1
+        elif self.repeat_mode == "playlist":
+            # A faire
+            pass
+
         print("next")
         if self.cursor < self.size:
             coro = self.startPlayback()
@@ -101,7 +115,6 @@ class Queue():
     async def addEntry(self, entry):
         self.content.append(entry)
         self.size = self.size + 1
-        # await self.text_channel.send("%s a été ajouté à la file d\'attente" % (entry.title))
         if self.size == self.cursor + 1:
             await self.startPlayback()
 
@@ -223,6 +236,7 @@ class Music(commands.Cog):
             else:
                 if data['is_live'] == True:
                     filename = data['url']
+                    fileSize = 0
                 else:
                     try:
                         filename = Youtube.getFilename(data)
@@ -374,7 +388,7 @@ class Music(commands.Cog):
                 Queues[guild].cursor -= 1
             if index == Queues[guild].cursor:
                 voiceClient.stop()
-            if entry.entryType != "live" and entry.filename in os.listdir(DLDIR):
+            if entry.entryType != "Direct" and entry.filename in os.listdir(DLDIR):
                 os.remove(DLDIR + entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
         else:
@@ -418,7 +432,7 @@ class Music(commands.Cog):
         guild = context.guild.id
         if voiceClient is not None:
             for entry in Queues[guild].content:
-                if entry.entryType != "live" and entry.filename in os.listdir(DLDIR):
+                if entry.entryType != "Direct" and entry.filename in os.listdir(DLDIR):
                     os.remove(DLDIR + entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
@@ -426,3 +440,21 @@ class Music(commands.Cog):
             return await context.send('Arrêté')
         else:
             return await context.send('Aucune lecture en cours')
+
+    @commands.command(aliases=['r', 'repeter'])
+    async def repeat(self, context, mode: str = None):
+        guild = context.guild.id
+        if guild not in Queues:
+            return await context.send('Aucune liste d\'attente')
+
+        repeat_modes = ["none", "entry", "all", "playlist"]
+        if mode is not None:
+            if mode not in repeat_modes:
+                return await context.send(embed=Help.get(context, 'music' 'repeat'))
+            else:
+                Queues[guild].repeat_mode = mode
+
+        old_mode = Queues[guild].repeat_mode
+        new_mode = repeat_modes[(repeat_modes.index(old_mode) + 1) % len(repeat_modes)]
+        Queues[guild].repeat_mode = new_mode
+        return await context.send('Le mode de répétition à été changé sur %s', new_mode)
