@@ -332,23 +332,37 @@ class Music(commands.Cog):
                 tab = "⠀⠀⠀⠀"
                 if entry.playlist.title != current_playlist:
                     current_playlist = entry.playlist.title
-                    list += "⠀⠀ Playlist : %s\n" % entry.playlist.title
+                    if Queues[guild].repeat_mode == "playlist":
+                        list += "⟳⠀ Playlist : %s\n" % entry.playlist.title
+                    else:
+                        list += "⠀⠀ Playlist : %s\n" % entry.playlist.title
             else:
                 tab = ""
             totalDuration += entry.duration
             totalSize += entry.fileSize
             indicator = "⠀⠀ "
             if Queues[guild].cursor == i:
-                indicator = "→⠀"
+                if Queues[guild].repeat_mode == "entry":
+                    indicator = "⟳⠀"
+                else:
+                    indicator = "→⠀"
 
             list += "%s%s%d: %s - %s - %.2fMo\n" % (tab, indicator, i, entry.title, time_format(entry.duration), entry.fileSize/1000000)
+
+        repeat_text = {
+            "none": "Aucun",
+            "entry": "Son en cours",
+            "all": "Tout",
+            "playlist": "Playlist"
+        }
 
         embed = discord.Embed(
             description=list,
             color=0x565493
         )
         embed.set_author(name="Liste de lecture", icon_url="https://i.imgur.com/C66eNWB.jpg")
-        embed.set_footer(text="Nombre d'entrées : %d | Durée totale : %s | Taille totale %.2fMo" % (Queues[guild].size, time_format(totalDuration), totalSize/1000000))
+        embed.set_footer(text="Nombre d'entrées : %d | Mode de répétition : %s\nDurée totale : %s | Taille totale : %.2fMo" %
+                         (Queues[guild].size, repeat_text[Queues[guild].repeat_mode], time_format(totalDuration), totalSize/1000000))
 
         return await context.send(embed=embed)
 
@@ -450,11 +464,13 @@ class Music(commands.Cog):
         repeat_modes = ["none", "entry", "all", "playlist"]
         if mode is not None:
             if mode not in repeat_modes:
-                return await context.send(embed=Help.get(context, 'music' 'repeat'))
+                return await context.send(embed=Help.get(context, 'music', 'repeat'))
             else:
-                Queues[guild].repeat_mode = mode
+                new_mode = mode
+                Queues[guild].repeat_mode = new_mode
+        else:
+            old_mode = Queues[guild].repeat_mode
+            new_mode = repeat_modes[(repeat_modes.index(old_mode) + 1) % len(repeat_modes)]
+            Queues[guild].repeat_mode = new_mode
 
-        old_mode = Queues[guild].repeat_mode
-        new_mode = repeat_modes[(repeat_modes.index(old_mode) + 1) % len(repeat_modes)]
-        Queues[guild].repeat_mode = new_mode
-        return await context.send('Le mode de répétition à été changé sur %s', new_mode)
+        return await context.send('Le mode de répétition à été changé sur %s' % new_mode)
