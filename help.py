@@ -18,7 +18,7 @@ categories = {
 commandsList = {
     'description': {
         'music': {
-            'play': 'Permet de lire un son insane depuis Youtube ou un lien direct',
+            'play': 'Permet de lire un son insane depuis Youtube/Spotify ou un lien direct',
             'nowplaying': 'Permet de connaître le son en lecture et son avancement',
             'info': 'Affiche les informations sur une musique de la liste d\'attente',
             'queue': 'Affiche la liste d\'attente',
@@ -28,7 +28,8 @@ commandsList = {
             'pause': 'Met en pause la lecture',
             'resume': 'Reprend la lecture',
             'stop': 'Arrete la lecture et vide la liste d\'attente',
-            'repeat': 'Change le mode de répétition'
+            'repeat': 'Change le mode de répétition',
+            'goto': 'Se déplace à un autre musique de la liste'
         },
         'manage': {
             'set-prefix': 'Défini un nouveau préfixe pour le robot (défaut $)',
@@ -44,7 +45,8 @@ commandsList = {
             'info': '<position>',
             'move': '<position actuelle> <nouvelle position>',
             'remove': '<position>',
-            'repeat': '<mode>\nExemples : none, entry, all, playlist'
+            'repeat': '<mode>\nExemples : none, entry, all, playlist',
+            'goto': '<position>'
         },
         'manage': {
             'set-prefix': '"nouveau préfixe"'

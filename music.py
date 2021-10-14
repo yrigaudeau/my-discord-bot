@@ -45,7 +45,7 @@ async def download_progress(filename, message, text, data):
 
 
 class Entry():
-    def __init__(self, applicant, filename, entryType, fileSize, playlist=None):
+    def __init__(self, filename, applicant, entryType, fileSize=0, playlist=None):
         self.applicant = applicant
         self.filename = filename
         self.entryType = entryType
@@ -60,14 +60,16 @@ class Entry():
         self.album = data['album'] if 'album' in data else None
         self.duration = data['duration']
         self.thumbnail = data['thumbnail']
-        self.url = 'https://www.youtube.com/watch?v=' + data['id']
+        self.id = data['id']
+        self.url = 'https://www.youtube.com/watch?v=' + self.id
 
 
 class Playlist():
     def buildMetadataYoutube(self, data):
         self.title = data['title']
         self.uploader = data['uploader'] if 'uploader' in data else None
-        self.url = 'https://www.youtube.com/playlist?list=' + data['id']
+        self.id = data['id']
+        self.url = 'https://www.youtube.com/playlist?list=' + self.id
 
 
 class Queue():
@@ -101,6 +103,11 @@ class Queue():
                 self.cursor = self.cursor + 1
         elif self.repeat_mode == "playlist":
             # A faire
+            # Fin de la playlist ??
+            if self.cursor < self.size:
+                pass
+            # GO au début
+
             pass
 
         print("next")
@@ -112,8 +119,11 @@ class Queue():
             except:
                 print("coro error")
 
-    async def addEntry(self, entry):
-        self.content.append(entry)
+    async def addEntry(self, entry, position=None):
+        if position is None or position == self.size:
+            self.content.append(entry)
+        else:
+            self.content.insert(position)
         self.size = self.size + 1
         if self.size == self.cursor + 1:
             await self.startPlayback()
@@ -213,6 +223,7 @@ class Music(commands.Cog):
             if 'entries' in data:
                 playlist = Playlist()
                 playlist.buildMetadataYoutube(data)
+                queue_start = Queues[guild].size
                 for i in range(len(data['entries'])):
                     if data['entries'][i]['is_live'] == True:
                         filename = data['entries'][i]['url']
@@ -229,9 +240,9 @@ class Music(commands.Cog):
                             continue
                         fileSize = os.path.getsize(DLDIR + filename)
                     entryType = "Direct" if filename.startswith("https://") else "Vidéo"
-                    entry = Entry(applicant, filename, entryType, fileSize, playlist)
+                    entry = Entry(filename, applicant, entryType, fileSize, playlist)
                     entry.buildMetadataYoutube(data['entries'][i])
-                    await queue.addEntry(entry)
+                    await queue.addEntry(entry, queue_start + i)
                     await message.edit(content="%s a été ajouté à la file d\'attente" % data['entries'][i]['title'])
             else:
                 if data['is_live'] == True:
@@ -251,7 +262,7 @@ class Music(commands.Cog):
                 entryType = "Direct" if filename.startswith("https://") else "Vidéo"
                 # elif 'Music' in data['categories']:
                 #    entryType = "Musique"
-                entry = Entry(applicant, filename, entryType, fileSize)
+                entry = Entry(filename, applicant, entryType, fileSize)
                 entry.buildMetadataYoutube(data)
                 await queue.addEntry(entry)
                 await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
@@ -330,8 +341,8 @@ class Music(commands.Cog):
             entry = Queues[guild].content[i]
             if entry.playlist is not None:
                 tab = "⠀⠀⠀⠀"
-                if entry.playlist.title != current_playlist:
-                    current_playlist = entry.playlist.title
+                if entry.playlist.id != current_playlist:
+                    current_playlist = entry.playlist.id
                     if Queues[guild].repeat_mode == "playlist":
                         list += "⟳⠀ Playlist : %s\n" % entry.playlist.title
                     else:
@@ -351,7 +362,7 @@ class Music(commands.Cog):
 
         repeat_text = {
             "none": "Aucun",
-            "entry": "Son en cours",
+            "entry": "Musique en cours",
             "all": "Tout",
             "playlist": "Playlist"
         }
@@ -474,3 +485,20 @@ class Music(commands.Cog):
             Queues[guild].repeat_mode = new_mode
 
         return await context.send('Le mode de répétition à été changé sur %s' % new_mode)
+
+    @commands.command(aliases=['g', 'go', ''])
+    async def goto(self, context, index: int = None):
+        guild = context.guild.id
+        voiceClient = context.voice_client
+        if guild not in Queues:
+            return await context.send('Aucune liste d\'attente')
+
+        if index is None:
+            return await context.send(embed=Help.get(context, 'music', 'goto'))
+
+        if index < Queues[guild].size and index >= 0:
+            Queues[guild].cursor = index - 1
+            voiceClient.stop()
+            return await context.send('Direction la musique n°%d' % index)
+        else:
+            return await context.send('L\'index %d n\'existe pas' % index)
