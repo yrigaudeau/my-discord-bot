@@ -1,6 +1,5 @@
 import asyncio
 import os
-import re
 import discord
 from discord.ext import commands
 from youtube import Youtube
@@ -103,17 +102,30 @@ class Queue():
                 self.cursor = self.cursor + 1
         elif self.repeat_mode == "playlist":
             # A faire
+            def gotostart():
+                i = self.cursor-1
+                while self.content[i].playlist is not None and i >= 0:
+                    if self.content[i].playlist.id == current_entry.playlist.id:
+                        i = i-1
+                        print(i)
+                    else:
+                        break
+                self.cursor = i
+
             # Fin de la playlist ??
             current_entry = self.content[self.cursor]
-            if self.cursor < self.size:
-                if self.content[self.cursor+1].playlist.id != current_entry.playlist.id:
-                    # GO au début
-                    i = self.cursor
-                    while self.content[i].playlist.id == current_entry.playlist.id and i > 0:
-                        i = i-1
-                    self.cursor = i-1
+            if current_entry.playlist.id is not None:
+                if self.cursor < self.size-1:
+                    if self.content[self.cursor+1].playlist is not None:
+                        if self.content[self.cursor+1].playlist.id != current_entry.playlist.id:
+                            # GO au début
+                            gotostart()
+                    else:
+                        gotostart()
+                elif self.cursor == self.size - 1:
+                    gotostart()
 
-            pass
+            self.cursor = self.cursor + 1
 
         print("next")
         if self.cursor < self.size:
@@ -128,7 +140,7 @@ class Queue():
         if position is None or position == self.size:
             self.content.append(entry)
         else:
-            self.content.insert(position)
+            self.content.insert(position, entry)
         self.size = self.size + 1
         if self.size == self.cursor + 1:
             await self.startPlayback()
@@ -504,6 +516,6 @@ class Music(commands.Cog):
         if index < Queues[guild].size and index >= 0:
             Queues[guild].cursor = index - 1
             voiceClient.stop()
-            return await context.send('Direction la musique n°%d' % index)
+            return #await context.send('Direction la musique n°%d' % index)
         else:
             return await context.send('L\'index %d n\'existe pas' % index)
