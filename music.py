@@ -104,9 +104,14 @@ class Queue():
         elif self.repeat_mode == "playlist":
             # A faire
             # Fin de la playlist ??
+            current_entry = self.content[self.cursor]
             if self.cursor < self.size:
-                pass
-            # GO au début
+                if self.content[self.cursor+1].playlist.id != current_entry.playlist.id:
+                    # GO au début
+                    i = self.cursor
+                    while self.content[i].playlist.id == current_entry.playlist.id and i > 0:
+                        i = i-1
+                    self.cursor = i-1
 
             pass
 
