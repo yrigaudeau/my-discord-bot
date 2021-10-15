@@ -107,7 +107,6 @@ class Queue():
                 while self.content[i].playlist is not None and i >= 0:
                     if self.content[i].playlist.id == current_entry.playlist.id:
                         i = i-1
-                        print(i)
                     else:
                         break
                 self.cursor = i
@@ -177,10 +176,10 @@ class Music(commands.Cog):
             return await context.send('Non connecté à un salon vocal')
         elif voiceClient is not None:
             await voiceClient.move_to(authorVoice.channel)
-            print("voice client not none")
+            #print("voice client not none")
         else:
             voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
-            print("voice client none")
+            #print("voice client none")
 
         guild = context.guild.id
         if guild not in Queues:
@@ -225,7 +224,7 @@ class Music(commands.Cog):
                 except:
                     return await message.edit(context='Aucune musique trouvé')
                 url = result["link"]
-                print(url)
+                #print(url)
             else:
                 message = await context.send("Investigation sur \"%s\"..." % query[8:])
                 url = query
@@ -516,6 +515,6 @@ class Music(commands.Cog):
         if index < Queues[guild].size and index >= 0:
             Queues[guild].cursor = index - 1
             voiceClient.stop()
-            return #await context.send('Direction la musique n°%d' % index)
+            return  # await context.send('Direction la musique n°%d' % index)
         else:
             return await context.send('L\'index %d n\'existe pas' % index)

@@ -1,12 +1,12 @@
 from youtubesearchpython.__future__ import VideosSearch
-import youtube_dl
+import yt_dlp
 import asyncio
 from config import DLDIR
 
 # Suppress noise about console usage from errors
-youtube_dl.utils.bug_reports_message = lambda: ''
+yt_dlp.utils.bug_reports_message = lambda: ''
 
-ytdl_format_options = {
+ydl_opts = {
     'format': 'bestaudio/best',
     'outtmpl': DLDIR + '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
@@ -14,6 +14,7 @@ ytdl_format_options = {
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
+    'verbose': False,
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
@@ -21,7 +22,7 @@ ytdl_format_options = {
     'source_address': '0.0.0.0'
 }
 
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ydl = yt_dlp.YoutubeDL(ydl_opts)
 
 
 class Youtube():
@@ -32,17 +33,17 @@ class Youtube():
 
     async def fetchData(url, loop=None):
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+        data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
         return data
 
     def getFilename(data):
-        filename = ytdl.prepare_filename(data)[len(DLDIR):]
+        filename = ydl.prepare_filename(data)[len(DLDIR):]
         print(filename)
         return filename
 
     async def downloadAudio(url, loop=None):
         loop = loop or asyncio.get_event_loop()
-        await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=True))
+        await loop.run_in_executor(None, lambda: ydl.download([url]))
 
 
 if __name__ == "__main__":
