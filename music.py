@@ -365,6 +365,7 @@ class Music(commands.Cog):
                         list += "⠀⠀ Playlist : %s\n" % entry.playlist.title
             else:
                 tab = ""
+                current_playlist = ""
             totalDuration += entry.duration
             totalSize += entry.fileSize
             indicator = "⠀⠀ "
