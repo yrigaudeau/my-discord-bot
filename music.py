@@ -319,6 +319,8 @@ class Music(commands.Cog):
                 content += "Progression : %s / %s\n" % (current, duration)
             if album is not None:
                 content += "Album : %s\n" % (album)
+            if entry.playlist is not None:
+                content += "Playlist : [%s](%s)\n" % (entry.playlist.title, entry.playlist.url)
             content += "Type : %s\n" % (entryType)
             content += "Position : %d" % index
 
