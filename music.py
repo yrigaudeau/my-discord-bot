@@ -52,9 +52,9 @@ class Entry():
         self.playlist = playlist
 
     def buildMetadataYoutube(self, data):
-        #self.title = data['track'] if 'track' in data else data['title']
+        # self.title = data['track'] if 'track' in data else data['title']
         self.title = data['title']
-        #self.artist = data['artist'] if 'artist' in data else data['channel']
+        # self.artist = data['artist'] if 'artist' in data else data['channel']
         self.artist = data['channel']
         self.album = data['album'] if 'album' in data else None
         self.duration = data['duration']
@@ -176,10 +176,10 @@ class Music(commands.Cog):
             return await context.send('Non connecté à un salon vocal')
         elif voiceClient is not None:
             await voiceClient.move_to(authorVoice.channel)
-            #print("voice client not none")
+            # print("voice client not none")
         else:
             voiceClient = await authorVoice.channel.connect(timeout=600, reconnect=True)
-            #print("voice client none")
+            # print("voice client none")
 
         guild = context.guild.id
         if guild not in Queues:
@@ -224,7 +224,7 @@ class Music(commands.Cog):
                 except:
                     return await message.edit(context='Aucune musique trouvé')
                 url = result["link"]
-                #print(url)
+                # print(url)
             else:
                 message = await context.send("Investigation sur \"%s\"..." % query[8:])
                 url = query
@@ -413,14 +413,27 @@ class Music(commands.Cog):
             return await context.send('Une des deux positions est invalide')
 
     @commands.command(aliases=['rm', 'supprimer', 'enlever'])
-    async def remove(self, context, index: int = None):
+    async def remove(self, context, option: str = None, index: int = None):
         guild = context.guild.id
         voiceClient = context.voice_client
         if guild not in Queues:
             return await context.send('Aucune liste d\'attente')
 
-        if index is None:
+        if index is None and option is None:
             return await context.send(embed=Help.get(context, 'music', 'remove'))
+
+        if index is None and option.isdigit():
+            index = int(option)
+        elif index is not None:
+            pass
+        else:
+            return await context.send(embed=Help.get(context, 'music', 'remove'))
+
+        if option == "-r":
+            # go to end
+
+            # remove entries
+            return await context.send("Non prit en charge pour le moment")
 
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].getEntry(index)

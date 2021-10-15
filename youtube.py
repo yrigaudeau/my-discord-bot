@@ -43,7 +43,7 @@ class Youtube():
 
     async def downloadAudio(url, loop=None):
         loop = loop or asyncio.get_event_loop()
-        await loop.run_in_executor(None, lambda: ydl.download([url]))
+        await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
 
 
 if __name__ == "__main__":
