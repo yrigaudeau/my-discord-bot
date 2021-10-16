@@ -3,6 +3,13 @@
 Made with Python 3.9  
 In alpha early development
 
+# Unique Features
+
+* Playlists
+    * Playlists are identified in queue
+    * Possibility to loop within a playlist
+    * Possibility to remove all songs in a playlist
+
 # Installation
 
 ## Clone repo and install dependencies
@@ -50,8 +57,9 @@ sudo -u dj-patrick python3 .
 
 ## Install as service
 ```bash
-sudo cp dj-patrick.service /etc/systemd/system
-sudo cp -r ../my-discord-bot /opt/dj-patrick
+sudo mv dj-patrick.service /etc/systemd/system
+sudo mkdir /opt/dj-patrick
+sudo cp * /opt/dj-patrick
 sudo systemctl daemon-reload
 sudo systemctl enable dj-patrick
 sudo systemctl start dj-patrick
