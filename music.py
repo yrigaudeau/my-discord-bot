@@ -38,7 +38,7 @@ class Entry():
         # self.artist = data['artist'] if 'artist' in data else data['channel']
         self.artist = data['channel']
         self.album = data['album'] if 'album' in data else None
-        self.duration = data['duration']
+        self.duration = data['duration'] if self.entryType != "Direct" else 0
         self.thumbnail = data['thumbnail']
         self.id = data['id']
         self.url = 'https://www.youtube.com/watch?v=' + self.id
@@ -50,6 +50,9 @@ class Playlist():
         self.uploader = data['uploader'] if 'uploader' in data else None
         self.id = data['id']
         self.url = 'https://www.youtube.com/playlist?list=' + self.id
+
+    def buildMetadataSpotify(self, data):
+        pass
 
 
 class Queue():
@@ -204,7 +207,7 @@ class Music(commands.Cog):
                 try:
                     result = await Youtube.searchVideos(query)
                 except:
-                    return await message.edit(context='Aucune musique trouvé')
+                    return await message.edit(content='Aucune musique trouvé')
                 url = result["link"]
                 # print(url)
             else:
@@ -293,11 +296,14 @@ class Music(commands.Cog):
             applicant = entry.applicant
 
             current = time_format(int(time.time() - Queues[guild].starttime))
-            duration = time_format(entry.duration)
+            duration = entry.duration
 
             content = "Chaîne : %s\n" % (artist)
             if Queues[guild].cursor == index:
-                content += "Progression : %s / %s\n" % (current, duration)
+                if duration == 0:
+                    content += "Progression : %s\n" % (current)
+                else:
+                    content += "Progression : %s / %s\n" % (current, time_format(entry.duration))
             if album is not None:
                 content += "Album : %s\n" % (album)
             if entry.playlist is not None:

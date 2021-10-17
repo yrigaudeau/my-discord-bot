@@ -4,21 +4,6 @@ import asyncio
 import time
 from config import DLDIR
 
-oldTime = time.time()
-
-
-def downloadProgress(d, message, text, loop):
-    global oldTime
-    if d['status'] == 'downloading':
-        #print(d['filename'], d['_percent_str'], d['_eta_str'])
-        currentSize = d['downloaded_bytes']/1000000
-        downloadSize = d['total_bytes']/1000000
-        if time.time() - oldTime > 2:
-            oldTime = time.time()
-            asyncio.run_coroutine_threadsafe
-            loop.create_task(message.edit(content="%s [%.2f/%.2f Mo]" % (text, currentSize, downloadSize)))
-
-
 # Suppress noise about console usage from errors
 yt_dlp.utils.bug_reports_message = lambda: ''
 
@@ -40,16 +25,26 @@ ydl_opts = {
 }
 
 ydl = yt_dlp.YoutubeDL(ydl_opts)
+oldTime = 0
 
 
 class Youtube():
+    def downloadProgress(d, message, text, loop):
+        global oldTime
+        if d['status'] == 'downloading':
+            currentSize = d['downloaded_bytes']/1000000
+            downloadSize = d['total_bytes']/1000000
+            if time.time() - oldTime > 2:
+                oldTime = time.time()
+                asyncio.run_coroutine_threadsafe
+                loop.create_task(message.edit(content="%s [%.2f/%.2f Mo]" % (text, currentSize, downloadSize)))
+
     async def searchVideos(query, nbEntries=1):
         videosSearch = VideosSearch(query, limit=nbEntries)
         videosResult = await videosSearch.next()
         return videosResult["result"][0]
 
-    async def fetchData(url, loop=None):
-        loop = loop or asyncio.get_event_loop()
+    async def fetchData(url, loop):
         data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
         return data
 
@@ -58,9 +53,9 @@ class Youtube():
         print(filename)
         return filename
 
-    async def downloadAudio(url, message, text, loop=None):
-        loop = loop or asyncio.get_event_loop()
-        ydl.add_progress_hook(lambda d: downloadProgress(d, message, text, loop))
+    @classmethod
+    async def downloadAudio(self, url, message, text, loop):
+        ydl.add_progress_hook(lambda d: self.downloadProgress(d, message, text, loop))
         await loop.run_in_executor(None, lambda: ydl.download([url]))
 
 

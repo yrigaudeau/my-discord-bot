@@ -12,10 +12,7 @@ if Config.spotifyEnabled:
 
 class Spotify():
     def getTrack(url):
-        try:
-            return sp.track(url)
-        except:
-            return None
+        return sp.track(url)
 
 
 if __name__ == "__main__":
