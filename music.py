@@ -25,23 +25,21 @@ def time_format(seconds):
 
 
 class Entry():
-    def __init__(self, filename, applicant, entryType, fileSize=0, playlist=None):
+    def __init__(self, filename, applicant, fileSize=0, playlist=None):
         self.applicant = applicant
         self.filename = filename
-        self.entryType = entryType
         self.fileSize = fileSize
         self.playlist = playlist
 
     def buildMetadataYoutube(self, data):
-        # self.title = data['track'] if 'track' in data else data['title']
         self.title = data['title']
-        # self.artist = data['artist'] if 'artist' in data else data['channel']
-        self.artist = data['channel']
+        self.channel = data['channel']
+        self.channel_url = data['channel_url']
         self.album = data['album'] if 'album' in data else None
-        self.duration = data['duration'] if self.entryType != "Direct" else 0
+        self.duration = data['duration'] if self.fileSize != 0 else 0
         self.thumbnail = data['thumbnail']
         self.id = data['id']
-        self.url = 'https://www.youtube.com/watch?v=' + self.id
+        self.url = data['webpage_url']
 
 
 class Playlist():
@@ -49,7 +47,7 @@ class Playlist():
         self.title = data['title']
         self.uploader = data['uploader'] if 'uploader' in data else None
         self.id = data['id']
-        self.url = 'https://www.youtube.com/playlist?list=' + self.id
+        self.url = data['webpage_url']
 
     def buildMetadataSpotify(self, data):
         pass
@@ -68,7 +66,7 @@ class Queue():
     async def startPlayback(self):
         if self.voice_client.is_connected():
             entry = self.content[self.cursor]
-            filename = DLDIR + entry.filename if entry.entryType != "Direct" else entry.filename
+            filename = DLDIR + entry.filename if entry.fileSize != 0 else entry.filename
             player = discord.FFmpegPCMAudio(filename, options="-vn")
             self.voice_client.play(player, after=lambda e: self.nextEntry())
             self.starttime = time.time()
@@ -128,6 +126,8 @@ class Queue():
         self.size = self.size + 1
         if self.size == self.cursor + 1:
             await self.startPlayback()
+
+        return position or self.size-1
 
     def removeEntry(self, index):
         self.content.pop(index)
@@ -231,7 +231,7 @@ class Music(commands.Cog):
                     else:
                         try:
                             filename = Youtube.getFilename(data['entries'][i])
-                            text = "Téléchargement de %s... (%d/%d)" % (data['entries'][i]['title'], i+1, len(data['entries']))
+                            text = "(%d/%d) Téléchargement de %s..." % (i+1, len(data['entries']), data['entries'][i]['title'])
                             await Youtube.downloadAudio(data['entries'][i]['webpage_url'], message, text, self.bot.loop),
                         except:
                             await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
@@ -239,11 +239,13 @@ class Music(commands.Cog):
                         fileSize = os.path.getsize(DLDIR + filename)
 
                     if voiceClient.is_connected():
-                        entryType = "Direct" if filename.startswith("https://") else "Vidéo"
-                        entry = Entry(filename, applicant, entryType, fileSize, playlist)
+                        entry = Entry(filename, applicant, fileSize, playlist)
                         entry.buildMetadataYoutube(data['entries'][i])
-                        await queue.addEntry(entry, queue_start + i)
-                        await message.edit(content="%s a été ajouté à la file d\'attente" % data['entries'][i]['title'])
+                        position = await queue.addEntry(entry, queue_start + i)
+                        if i == len(data['entries']) - 1:
+                            await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                        else:
+                            await message.edit(content="(%d/%d) %d: %s a été ajouté à la file d\'attente" % (i+1, len(data['entries']), position, data['entries'][i]['title']))
                     else:
                         await message.edit(content="Téléchargement annulé")
                         break
@@ -261,11 +263,10 @@ class Music(commands.Cog):
                     fileSize = os.path.getsize(DLDIR + filename)
 
                 if voiceClient.is_connected():
-                    entryType = "Direct" if filename.startswith("https://") else "Vidéo"
-                    entry = Entry(filename, applicant, entryType, fileSize)
+                    entry = Entry(filename, applicant, fileSize)
                     entry.buildMetadataYoutube(data)
-                    await queue.addEntry(entry)
-                    await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                    position = await queue.addEntry(entry)
+                    await message.edit(content="%d: %s a été ajouté à la file d\'attente" % (position, data['title']))
 
     @commands.command(aliases=['np', 'en lecture'])
     async def nowplaying(self, context):
@@ -287,33 +288,23 @@ class Music(commands.Cog):
 
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].content[index]
-            title = entry.title
-            artist = entry.artist
-            album = entry.album
-            url = entry.url
-            entryType = entry.entryType
-            image = entry.thumbnail
-            applicant = entry.applicant
 
-            current = time_format(int(time.time() - Queues[guild].starttime))
-            duration = entry.duration
-
-            content = "Chaîne : %s\n" % (artist)
+            content = "Chaîne : [%s](%s)\n" % (entry.channel, entry.channel_url)
             if Queues[guild].cursor == index:
-                if duration == 0:
+                current = time_format(int(time.time() - Queues[guild].starttime))
+                if entry.duration == 0:
                     content += "Progression : %s\n" % (current)
                 else:
                     content += "Progression : %s / %s\n" % (current, time_format(entry.duration))
-            if album is not None:
-                content += "Album : %s\n" % (album)
+            if entry.album is not None:
+                content += "Album : %s\n" % (entry.album)
             if entry.playlist is not None:
                 content += "Playlist : [%s](%s)\n" % (entry.playlist.title, entry.playlist.url)
-            content += "Type : %s\n" % (entryType)
             content += "Position : %d" % index
 
             embed = discord.Embed(
-                title=title,
-                url=url,
+                title=entry.title,
+                url=entry.url,
                 description=content,
                 color=0x565493
             )
@@ -324,9 +315,9 @@ class Music(commands.Cog):
             else:
                 name = "Informations piste"
             embed.set_author(name=name, icon_url="https://i.imgur.com/C66eNWB.jpg")
-            embed.set_image(url=image)
+            embed.set_image(url=entry.thumbnail)
             # embed.set_thumbnail(url="https://i.imgur.com/C66eNWB.jpg")
-            embed.set_footer(text="Demandé par %s" % applicant.display_name, icon_url=applicant.avatar_url_as())
+            embed.set_footer(text="Demandé par %s" % entry.applicant.display_name, icon_url=entry.applicant.avatar_url_as())
 
             return await context.send(embed=embed)
         else:
@@ -432,7 +423,7 @@ class Music(commands.Cog):
                 Queues[guild].cursor -= 1
             if index == Queues[guild].cursor:
                 voiceClient.stop()
-            if entry.entryType != "Direct" and entry.filename in os.listdir(DLDIR):
+            if entry.filename in os.listdir(DLDIR):
                 os.remove(DLDIR + entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
         else:
@@ -476,7 +467,7 @@ class Music(commands.Cog):
         guild = context.guild.id
         if voiceClient is not None:
             for entry in Queues[guild].content:
-                if entry.entryType != "Direct" and entry.filename in os.listdir(DLDIR):
+                if entry.filename in os.listdir(DLDIR):
                     os.remove(DLDIR + entry.filename)
             Queues.pop(guild)
             voiceClient.stop()
