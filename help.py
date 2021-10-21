@@ -1,4 +1,6 @@
 import discord
+import os
+from datetime import datetime
 from discord.ext import commands
 from config import Config
 
@@ -79,6 +81,9 @@ class Help(commands.Cog):
                 value="%s%s %s" % (PREFIX, command, commandsList['usage'][category][command]),
                 inline=False
             )
+
+        last_update = datetime.fromtimestamp(int(os.path.getmtime(os.path.realpath(__file__))))
+        embed.set_footer(text="Dernière mise à jour : %s" % last_update)
 
         return embed
 
