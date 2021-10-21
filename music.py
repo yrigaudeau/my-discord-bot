@@ -62,6 +62,7 @@ class Queue():
         self.voice_client = voice_client
         self.text_channel = text_channel
         self.repeat_mode = repeat_mode  # none, entry, playlist, all
+        self.repeat_bypass = False
 
     async def startPlayback(self):
         if self.voice_client.is_connected() and not self.voice_client.is_playing():
@@ -74,41 +75,43 @@ class Queue():
             await self.text_channel.send('En lecture : %s' % (entry.title))
 
     def nextEntry(self):
-        if self.repeat_mode == "none":
-            self.cursor = self.cursor + 1
-        elif self.repeat_mode == "entry":
-            pass
-        elif self.repeat_mode == "all":
-            if self.cursor == self.size - 1:
-                self.cursor = 0
-            else:
+        if self.repeat_bypass is False:
+            if self.repeat_mode == "none":
                 self.cursor = self.cursor + 1
-        elif self.repeat_mode == "playlist":
-            # A faire
-            def gotostart():
-                i = self.cursor-1
-                while self.content[i].playlist is not None and i >= 0:
-                    if self.content[i].playlist.id == current_entry.playlist.id:
-                        i = i-1
-                    else:
-                        break
-                self.cursor = i
+            elif self.repeat_mode == "entry":
+                pass
+            elif self.repeat_mode == "all":
+                if self.cursor == self.size - 1:
+                    self.cursor = 0
+                else:
+                    self.cursor = self.cursor + 1
+            elif self.repeat_mode == "playlist":
+                # A faire
+                def gotostart():
+                    i = self.cursor-1
+                    while self.content[i].playlist is not None and i >= 0:
+                        if self.content[i].playlist.id == current_entry.playlist.id:
+                            i = i-1
+                        else:
+                            break
+                    self.cursor = i
 
-            # Fin de la playlist ??
-            current_entry = self.content[self.cursor]
-            if current_entry.playlist.id is not None:
-                if self.cursor < self.size-1:
-                    if self.content[self.cursor+1].playlist is not None:
-                        if self.content[self.cursor+1].playlist.id != current_entry.playlist.id:
-                            # GO au début
+                # Fin de la playlist ??
+                current_entry = self.content[self.cursor]
+                if current_entry.playlist.id is not None:
+                    if self.cursor < self.size-1:
+                        if self.content[self.cursor+1].playlist is not None:
+                            if self.content[self.cursor+1].playlist.id != current_entry.playlist.id:
+                                # GO au début
+                                gotostart()
+                        else:
                             gotostart()
-                    else:
+                    elif self.cursor == self.size - 1:
                         gotostart()
-                elif self.cursor == self.size - 1:
-                    gotostart()
 
-            self.cursor = self.cursor + 1
+                self.cursor = self.cursor + 1
 
+        self.repeat_bypass = False
         print("next")
         if self.cursor < self.size:
             coro = self.startPlayback()
@@ -434,8 +437,14 @@ class Music(commands.Cog):
     @commands.command(aliases=['s', 'passer'])
     async def skip(self, context):
         voiceClient = context.voice_client
+        guild = context.guild.id
         if voiceClient is not None:
-            voiceClient.stop()
+            if Queues[guild].cursor < Queues[guild].size:
+                Queues[guild].repeat_bypass = True
+                Queues[guild].cursor = Queues[guild].cursor + 1
+                voiceClient.stop()
+            else:
+                return await context.send('Rien à passer')
         else:
             return await context.send('Aucune lecture en cours')
 
@@ -509,11 +518,11 @@ class Music(commands.Cog):
             return await context.send(embed=Help.get(context, 'music', 'goto'))
 
         if index < Queues[guild].size and index >= 0:
+            Queues[guild].cursor = index
             if context.voice_client.is_playing() or context.voice_client.is_paused():
-                Queues[guild].cursor = index - 1
+                Queues[guild].repeat_bypass = True
                 voiceClient.stop()
             else:
-                Queues[guild].cursor = index
                 await Queues[guild].startPlayback()
             return  # await context.send('Direction la musique n°%d' % index)
         else:

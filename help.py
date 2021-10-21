@@ -93,6 +93,8 @@ class Help(commands.Cog):
         embed = discord.Embed(
             color=0x565493
         )
+        last_update = datetime.fromtimestamp(int(os.path.getmtime(os.path.realpath(__file__))))
+        embed.set_footer(text="Dernière mise à jour : %s" % last_update)
 
         if query is None:
             for category in categories['description']:

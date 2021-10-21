@@ -40,7 +40,8 @@ class Manage(commands.Cog):
                 voiceClient.stop()
             player = discord.FFmpegPCMAudio(os.path.dirname(os.path.realpath(__file__)) + "/shutdown.webm", options="-vn")
             voiceClient.play(player)
-            await asyncio.sleep(2)
+            while voiceClient.is_playing():
+                pass
             await voiceClient.disconnect()
         await context.send("Adios...")
         for f in os.listdir(DLDIR):
