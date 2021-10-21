@@ -64,7 +64,7 @@ class Queue():
         self.repeat_mode = repeat_mode  # none, entry, playlist, all
 
     async def startPlayback(self):
-        if self.voice_client.is_connected():
+        if self.voice_client.is_connected() and not self.voice_client.is_playing():
             entry = self.content[self.cursor]
             filename = DLDIR + entry.filename if entry.fileSize != 0 else entry.filename
             player = discord.FFmpegPCMAudio(filename, options="-vn")
@@ -226,29 +226,31 @@ class Music(commands.Cog):
                 playlist.buildMetadataYoutube(data)
                 queue_start = Queues[guild].size
                 for i in range(len(data['entries'])):
-                    if data['entries'][i]['is_live'] == True:
-                        filename = data['entries'][i]['url']
-                    else:
-                        try:
-                            filename = Youtube.getFilename(data['entries'][i])
-                            text = "(%d/%d) Téléchargement de %s..." % (i+1, len(data['entries']), data['entries'][i]['title'])
-                            await Youtube.downloadAudio(data['entries'][i]['webpage_url'], message, text, self.bot.loop),
-                        except:
-                            await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
-                            continue
-                        fileSize = os.path.getsize(DLDIR + filename)
-
-                    if voiceClient.is_connected():
-                        entry = Entry(filename, applicant, fileSize, playlist)
-                        entry.buildMetadataYoutube(data['entries'][i])
-                        position = await queue.addEntry(entry, queue_start + i)
-                        if i == len(data['entries']) - 1:
-                            await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                    if "is_live" in data['entries'][i]:
+                        if data['entries'][i]['is_live'] == True:
+                            filename = data['entries'][i]['url']
+                            fileSize = 0
                         else:
-                            await message.edit(content="(%d/%d) %d: %s a été ajouté à la file d\'attente" % (i+1, len(data['entries']), position, data['entries'][i]['title']))
-                    else:
-                        await message.edit(content="Téléchargement annulé")
-                        break
+                            try:
+                                filename = Youtube.getFilename(data['entries'][i])
+                                text = "(%d/%d) Téléchargement de %s..." % (i+1, len(data['entries']), data['entries'][i]['title'])
+                                await Youtube.downloadAudio(data['entries'][i]['webpage_url'], message, text, self.bot.loop),
+                            except:
+                                await message.edit(content="Erreur lors du téléchargement de %s" % data['entries'][i]['title'])
+                                continue
+                            fileSize = os.path.getsize(DLDIR + filename)
+
+                        if voiceClient.is_connected():
+                            entry = Entry(filename, applicant, fileSize, playlist)
+                            entry.buildMetadataYoutube(data['entries'][i])
+                            position = await queue.addEntry(entry, queue_start + i)
+                            if i == len(data['entries']) - 1:
+                                await message.edit(content="%s a été ajouté à la file d\'attente" % data['title'])
+                            else:
+                                await message.edit(content="(%d/%d) %d: %s a été ajouté à la file d\'attente" % (i+1, len(data['entries']), position, data['entries'][i]['title']))
+                        else:
+                            await message.edit(content="Téléchargement annulé")
+                            break
             else:
                 if data['is_live'] == True:
                     filename = data['url']
@@ -310,7 +312,7 @@ class Music(commands.Cog):
             )
             if Queues[guild].cursor == index:
                 name = "En cours de lecture"
-                if not voiceClient.is_playing():
+                if voiceClient.is_paused():
                     name = "En pause"
             else:
                 name = "Informations piste"
@@ -507,8 +509,12 @@ class Music(commands.Cog):
             return await context.send(embed=Help.get(context, 'music', 'goto'))
 
         if index < Queues[guild].size and index >= 0:
-            Queues[guild].cursor = index - 1
-            voiceClient.stop()
+            if context.voice_client.is_playing() or context.voice_client.is_paused():
+                Queues[guild].cursor = index - 1
+                voiceClient.stop()
+            else:
+                Queues[guild].cursor = index
+                await Queues[guild].startPlayback()
             return  # await context.send('Direction la musique n°%d' % index)
         else:
             return await context.send('L\'index %d n\'existe pas' % index)
