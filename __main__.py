@@ -7,6 +7,7 @@ from help import Help
 from music import Music
 from manage import Manage
 from fun import Fun
+from foxdot import Foxdot
 
 TOKEN = Config.token
 
@@ -30,11 +31,14 @@ if __name__ == "__main__":
         if message.author.id == bot.user.id or message.author.bot:
             return
 
+        await Foxdot.process_foxdot(message)
         await Fun.chocolatine(message)
+        
         await bot.process_commands(message)
 
     bot.add_cog(Music(bot))
     bot.add_cog(Fun(bot))
     bot.add_cog(Manage(bot))
     bot.add_cog(Help(bot))
+    bot.add_cog(Foxdot(bot))
     bot.run(TOKEN)

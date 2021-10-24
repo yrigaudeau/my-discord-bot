@@ -11,7 +11,7 @@ class Manage(commands.Cog):
 
     @commands.command(name='set-prefix')
     @commands.has_permissions(manage_messages=True)
-    async def set_prefix(self, context, *, query: str = None):
+    async def set_prefix(self, context, query: str = None):
         if " " in query:
             return await context.send("Préfixe invalide")
 
