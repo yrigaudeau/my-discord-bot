@@ -2,7 +2,7 @@ import discord
 import os
 from datetime import datetime
 from discord.ext import commands
-from config import Config
+from config import config
 
 categories = {
     'description': {
@@ -62,7 +62,7 @@ class Help(commands.Cog):
         self.bot = bot
 
     def get(context, category, command):
-        PREFIX = Config.getPrefix()
+        PREFIX = config.getPrefix()
         title = "Commande %s%s" % (PREFIX, command)
 
         embed = discord.Embed(
@@ -89,7 +89,7 @@ class Help(commands.Cog):
 
     @commands.command(aliases=['aide', 'h', 'oskour', 'aled'])
     async def help(self, context, query: str = None):
-        PREFIX = Config.getPrefix()
+        PREFIX = config.getPrefix()
         embed = discord.Embed(
             color=0x565493
         )

@@ -4,6 +4,7 @@ import json
 CFGFILE = "config.json"
 DLDIR = "downloads/"
 
+
 class Config():
     @classmethod
     def readConfig(self):
@@ -11,14 +12,19 @@ class Config():
             f = open(CFGFILE, 'r')
             self.conf = json.load(f)
             f.close()
-            if 'spotify-client-id' in self.conf and 'spotify-client-secret' in self.conf:
+
+            self.spotifyEnabled = False
+            if 'spotify-client-id' and 'spotify-client-secret' in self.conf:
                 self.spotifyEnabled = True
-            else:
-                self.spotifyEnabled = False
+
+            self.FoxDotEnabled = False
+            if "FoxDot-port" and "FoxDot-address" in self.conf:
+                self.FoxDotEnabled = True
+
             self.token = self.conf['discord-token']
         else:
             print("Fichier config non trouvé ou non valide:", CFGFILE)
-            exit(0)
+            exit()
 
     @classmethod
     def getPrefix(self):
@@ -31,5 +37,5 @@ class Config():
         json.dump(self.conf, f)
         f.close()
 
-
-Config.readConfig()
+config = Config()
+config.readConfig()

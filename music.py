@@ -5,7 +5,7 @@ from discord.ext import commands
 from youtube import Youtube
 from spotify import Spotify
 from help import Help
-from config import Config, DLDIR
+from config import config, DLDIR
 import time
 
 Queues = {}
@@ -182,7 +182,7 @@ class Music(commands.Cog):
                 await context.send("Mael t'abuse à mettre des liens en www, mais j'accepte quand même")
 
         if query.startswith(("spotify:", "https://open.spotify.com/")):
-            if not Config.spotifyEnabled:
+            if not config.spotifyEnabled:
                 return await context.send('La recherche Spotify n\'a pas été configurée')
             if query.startswith("https://open.spotify.com/"):
                 query = query[len("https://open.spotify.com/"):].replace('/', ':')

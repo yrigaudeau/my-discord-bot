@@ -1,70 +1,47 @@
-from FoxDot import *
-import FoxDot
-import re
 from discord.ext import commands
+import socket
+import asyncio
+from config import config
 
-# https://realpython.com/python-eval-function/
+BUFFER = 2048
 
-ALLOWED_NAMES = {
-    **{
-        k: v for k, v in Clock.__dict__.items() if not k.startswith("__")
-    },
-    **{
-        k: v for k, v in Player.__dict__.items() if not k.startswith("__")
-    },
-    **{
-        k: v for k, v in FoxDot.__dict__.items() if not k.startswith("__")
-    },
-    'print': print
-}
 
-foxdot_started = False
 class Foxdot(commands.Cog):
     def __init__(self, bot):
+        global instance
+        instance = self
         self.bot = bot
+        self.foxdot_started = False
+        self.clientid = 0x00
 
     @commands.command()
     async def foxdot(self, context, query: str = None):
-        global foxdot_started
-        if query == "start":
-            foxdot_started = True
-        elif query == "stop":
-            foxdot_started = False
-            Clock.clear()
+        if query == "start" and not self.foxdot_started:
+            self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.clientsocket.connect((config.conf["FoxDot-address"], config.conf["FoxDot-port"]))
+            self.clientsocket.send(b'\x01')
+
+            response = bytearray(self.clientsocket.recv(BUFFER))
+            if response[0] == 0x01:
+                self.clientid = response[1]
+
+            print(self.clientid)
+            self.foxdot_started = True
+
+        elif query == "stop" and self.foxdot_started:
+            self.clientsocket.send(b'\x02')
+
+            response = bytearray(self.clientsocket.recv(BUFFER))
+            if response[0] == 0x02:
+                self.clientsocket.close()
+                self.foxdot_started = False
+
         else:
             await context.send("erreur")
 
-    async def play_music(self, channel, instruction):
-        play_pattern = re.compile("^[a-z][a-z0-9](\ |)>>")
-        try:
-            if(re.search(play_pattern, instruction)):
-                code = compile(instruction, "<string>", "eval")
-            else:
-                code = compile(instruction, "<string>", "exec")
-            # Validate allowed names
-            for name in code.co_names:
-                if name not in ALLOWED_NAMES:
-                    raise NameError("L'utilisation de %s n'est pas autorisé" % name)
-
-            result = eval(code, {"__builtins__": {}}, ALLOWED_NAMES)
-            print(result)
-            if result is not None:
-                await channel.send(result)
-        except SyntaxError as e:
-            print(e)
-            await channel.send(e)
-        except NameError as e:
-            print(e)
-            await channel.send(e)
-        except TypeError as e:
-            print(e)
-            await channel.send(e)
-        except AttributeError as e:
-            print(e)
-            await channel.send(e)
-
-    @classmethod
-    async def process_foxdot(self, message):
-        global foxdot_started
-        if foxdot_started is True:
-            await self.play_music(self, message.channel, message.content)
+    async def send_command(message):
+        global instance
+        self = instance
+        if self.foxdot_started is True and not message.content.startswith(config.getPrefix() + "foxdot"):
+            lenght = len(message.content)
+            self.clientsocket.send(b'\x03' + lenght.to_bytes(2, 'big') + message.content.encode())

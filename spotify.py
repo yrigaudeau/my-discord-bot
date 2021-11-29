@@ -1,11 +1,11 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from config import Config
+from config import config
 
 
-if Config.spotifyEnabled:
-    SPOTIPY_CLIENT_ID = Config.conf['spotify-client-id']
-    SPOTIPY_CLIENT_SECRET = Config.conf['spotify-client-secret']
+if config.spotifyEnabled:
+    SPOTIPY_CLIENT_ID = config.conf['spotify-client-id']
+    SPOTIPY_CLIENT_SECRET = config.conf['spotify-client-secret']
     manager = SpotifyClientCredentials(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET)
     sp = spotipy.Spotify(client_credentials_manager=manager)
 

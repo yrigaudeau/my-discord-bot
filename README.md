@@ -75,3 +75,15 @@ sudo systemctl daemon-reload
 sudo rm -r /opt/dj-patrick
 sudo rm -r /var/lib/dj-patrick
 ```
+
+# (Optionnal) FoxDot installation
+
+## FoxDot
+```
+pip install FoxDot
+```
+
+## Jackd and Supercollider
+```bash
+apt install jackd supercollider alsa-utils
+```

@@ -2,7 +2,7 @@ import os
 import discord
 import asyncio
 from discord.ext import commands
-from config import Config, DLDIR
+from config import config, DLDIR
 
 
 class Manage(commands.Cog):
@@ -17,7 +17,7 @@ class Manage(commands.Cog):
 
         prefix = query
         await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=prefix+"help"))
-        Config.setPrefix(prefix)
+        config.setPrefix(prefix)
         return await context.send("Le Préfixe à été défini sur %s" % (prefix))
 
     @set_prefix.error
