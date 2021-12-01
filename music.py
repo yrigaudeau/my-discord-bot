@@ -200,9 +200,11 @@ class Music(commands.Cog):
             except:
                 return await context.send('Le lien n\'est pas valide')
 
-        if query.startswith("http") and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
+        if (query.startswith("http") or query.startswith("udp://")) and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
             # Other streams
-            pass
+            entry = Entry(query, context.author)
+            position = await queue.addEntry(entry)
+            await context.send("%d: %s a été ajouté à la file d\'attente" % (position, query))
         else:
             # Search YouTube
             if not query.startswith("https://"):
