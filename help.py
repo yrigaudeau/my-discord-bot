@@ -29,8 +29,8 @@ commandsList = {
             'remove': 'Supprime une musique de la liste d\'attente',
             'pause': 'Met en pause la lecture',
             'resume': 'Reprend la lecture',
-            'stop': 'Arrete la lecture et vide la liste d\'attente',
             'repeat': 'Change le mode de répétition',
+            'stop': 'Arrete la lecture et vide la liste d\'attente',
             'goto': 'Se déplace à un autre musique de la liste'
         },
         'manage': {

@@ -200,7 +200,7 @@ class Music(commands.Cog):
             except:
                 return await context.send('Le lien n\'est pas valide')
 
-        if (query.startswith("http") or query.startswith("udp://")) and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
+        if (query.startswith("http") or query.startswith("udp://") or query.startswith("tcp://")) and not query.startswith(("https://youtu.be", "https://www.youtube.com", "https://youtube.com")):
             # Other streams
             entry = Entry(query, context.author)
             position = await queue.addEntry(entry)
@@ -421,15 +421,15 @@ class Music(commands.Cog):
             # go to end
 
             # remove entries
-            return await context.send("Non prit en charge pour le moment")
+            return await context.send("Non pris en charge pour le moment")
 
         if index < Queues[guild].size and index >= 0:
             entry = Queues[guild].getEntry(index)
             Queues[guild].removeEntry(index)
-            if index <= Queues[guild].cursor:
-                Queues[guild].cursor -= 1
             if index == Queues[guild].cursor:
                 voiceClient.stop()
+            if index <= Queues[guild].cursor:
+                Queues[guild].cursor -= 1
             if entry.filename in os.listdir(DLDIR):
                 os.remove(DLDIR + entry.filename)
             return await context.send('%s a bien été supprimé' % (entry.title))
@@ -479,11 +479,12 @@ class Music(commands.Cog):
         voiceClient = context.voice_client
         guild = context.guild.id
         if voiceClient is not None:
+            if guild in Queues:
+                Queues.pop(guild)
+            voiceClient.stop()
             for entry in Queues[guild].content:
                 if entry.filename in os.listdir(DLDIR):
                     os.remove(DLDIR + entry.filename)
-            Queues.pop(guild)
-            voiceClient.stop()
             await voiceClient.disconnect()
             return await context.send('Arrêté')
         else:
@@ -509,7 +510,7 @@ class Music(commands.Cog):
 
         return await context.send('Le mode de répétition à été changé sur %s' % new_mode)
 
-    @commands.command(aliases=['g', 'go', ''])
+    @commands.command(aliases=['g', 'go'])
     async def goto(self, context, index: int = None):
         guild = context.guild.id
         voiceClient = context.voice_client
