@@ -17,11 +17,20 @@ if __name__ == "__main__":
     else:
         os.mkdir(DLDIR)
 
-    bot = commands.Bot(command_prefix=lambda e, f: config.getPrefix(), help_command=None)
+    intents = discord.Intents.default()
+    intents.message_content = True
+
+    bot = commands.Bot(command_prefix=lambda e, f: config.getPrefix(), help_command=None, intents=intents)
 
     @bot.event
     async def on_ready():
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=config.getPrefix()+"help"))
+        await bot.add_cog(Music(bot))
+        await bot.add_cog(Fun(bot))
+        await bot.add_cog(Manage(bot))
+        await bot.add_cog(Help(bot))
+        if config.FoxDotEnabled is True:
+            await bot.add_cog(Foxdot(bot))
         print('Logged in as {0} ({0.id})'.format(bot.user))
         print('------')
 
@@ -36,10 +45,4 @@ if __name__ == "__main__":
 
         await bot.process_commands(message)
 
-    bot.add_cog(Music(bot))
-    bot.add_cog(Fun(bot))
-    bot.add_cog(Manage(bot))
-    bot.add_cog(Help(bot))
-    if config.FoxDotEnabled is True:
-        bot.add_cog(Foxdot(bot))
     bot.run(config.token)
