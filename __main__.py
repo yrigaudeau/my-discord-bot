@@ -21,7 +21,6 @@ if __name__ == "__main__":
     intents.message_content = True
 
     bot = commands.Bot(command_prefix=lambda e, f: config.getPrefix(), help_command=None, intents=intents)
-    print(bot)
 
     @bot.event
     async def on_ready():
